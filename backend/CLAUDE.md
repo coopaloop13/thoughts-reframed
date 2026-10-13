@@ -10,6 +10,7 @@ GraphQL API for Reframed Thoughts. Node 22, ESM, TypeScript.
 - `dev` and `smoke` load `.env` via tsx `--env-file`.
 - `npm run db:generate` — drizzle-kit generate migrations from `src/db/schema.ts`. `npm run db:migrate` — apply to `DATABASE_URL`.
 - `npm run schema:export` — writes `schema.graphql` (iOS Apollo codegen reads it). Run after any schema change.
+- `npm run voice:start` / `voice:stop` / `voice:status` — bring the RunPod VoiceStudio GPU pod up or down (it bills ~$0.59/hr while running; everything else scales to zero on its own). Needs `RUNPOD_API_KEY` and `RUNPOD_POD_ID` in `.env`.
 - `npx wrangler deploy` — builds the Dockerfile, pushes the image, deploys the Worker proxy.
 
 ## Layout

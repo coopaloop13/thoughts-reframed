@@ -17,7 +17,10 @@
     "db:migrate": "drizzle-kit migrate",
     "schema:export": "tsx scripts/export-schema.ts",
     "typecheck:worker": "tsc -p worker/tsconfig.json",
-    "smoke": "tsx --env-file=.env scripts/smoke.ts"
+    "smoke": "tsx --env-file=.env scripts/smoke.ts",
+    "voice:start": "scripts/voice-pod.sh start",
+    "voice:stop": "scripts/voice-pod.sh stop",
+    "voice:status": "scripts/voice-pod.sh status"
   },
   "keywords": [],
   "author": "",
