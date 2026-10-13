@@ -56,7 +56,7 @@ final class RecordFlowViewModel {
         watchTask?.cancel()
         let t = Task { await self.follow(id) }
         watchTask = t
-        await t.value
+        await withTaskCancellationHandler { await t.value } onCancel: { t.cancel() }
     }
 
     private func follow(_ id: String) async {

@@ -83,4 +83,18 @@ struct RecordFlowViewModelTests {
         await Task.yield()
         #expect(vm.phase == .idle)
     }
+    @Test func callerCancellationStopsFollow() async {
+        let cont = Captured<AsyncThrowingStream<Session, Error>.Continuation?>(nil)
+        let terminated = Captured(false)
+        let api = API.stub(watchSession: { _ in AsyncThrowingStream { c in
+            c.onTermination = { _ in terminated.value = true }
+            cont.value = c
+        } })
+        let vm = RecordFlowViewModel(api: api, recorder: recording(), onUnauthenticated: {})
+        let outer = Task { await vm.resume(session: .fixture(status: .reframing)) }
+        while cont.value == nil { await Task.yield() }
+        outer.cancel()
+        await outer.value
+        #expect(terminated.value)
+    }
 }
