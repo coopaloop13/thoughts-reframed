@@ -10,7 +10,7 @@ export function createR2(cfg: { accountId: string; accessKeyId: string; secretAc
     return res;
   };
   return {
-    put: async (key, body, contentType) => { await call('PUT', key, { body, headers: { 'content-type': contentType } }); },
+    put: async (key, body, contentType) => { await call('PUT', key, { body: body as BodyInit, headers: { 'content-type': contentType } }); },
     get: async (key) => new Uint8Array(await (await call('GET', key)).arrayBuffer()),
     delete: async (key) => { await call('DELETE', key); },
     presignGet: async (key) => {
