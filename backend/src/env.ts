@@ -7,7 +7,9 @@ const KEYS = [
 export type Env = Record<(typeof KEYS)[number], string> & { PORT: number };
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const out: Record<string, string | number> = { PORT: Number(source.PORT ?? 8080) };
+  const port = Number(source.PORT || 8080);
+  if (!Number.isInteger(port) || port <= 0) throw new Error(`Invalid PORT: ${source.PORT}`);
+  const out: Record<string, string | number> = { PORT: port };
   for (const k of KEYS) {
     if (!source[k]) throw new Error(`Missing env var: ${k}`);
     out[k] = source[k]!;

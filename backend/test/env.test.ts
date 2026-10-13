@@ -15,4 +15,13 @@ describe('loadEnv', () => {
     const { JWT_SECRET: _, ...missing } = full;
     expect(() => loadEnv(missing)).toThrow('Missing env var: JWT_SECRET');
   });
+  it('overrides PORT', () => {
+    expect(loadEnv({ ...full, PORT: '3000' }).PORT).toBe(3000);
+  });
+  it('treats empty PORT as unset', () => {
+    expect(loadEnv({ ...full, PORT: '' }).PORT).toBe(8080);
+  });
+  it('rejects invalid PORT', () => {
+    expect(() => loadEnv({ ...full, PORT: 'abc' })).toThrow('Invalid PORT: abc');
+  });
 });
