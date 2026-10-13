@@ -12,5 +12,5 @@
   <key>NSMicrophoneUsageDescription</key><string>Reframed records your voice so it can speak your affirmations back to you.</string>
   <key>UIBackgroundModes</key><array><string>audio</string></array>
   <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
-  <key>APIBaseURL</key><string>https://reframed-thoughts.REPLACE_ME.workers.dev</string>
+  <key>APIBaseURL</key><string>https://reframed-thoughts.joshuarcooper.workers.dev</string>
 </dict></plist>
