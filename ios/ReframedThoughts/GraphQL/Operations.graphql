@@ -9,3 +9,4 @@ mutation EnrollVoice($sample: File!, $referenceText: String!) { enrollVoice(samp
 mutation CreateSession($recording: File!) { createSession(recording: $recording) { ...SessionFields } }
 mutation DeleteAccount { deleteAccount }
 subscription SessionUpdated($id: ID!) { sessionUpdated(id: $id) { ...SessionFields } }
+mutation PreviewVoice { previewVoice }

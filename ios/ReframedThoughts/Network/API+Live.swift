@@ -71,6 +71,13 @@ extension API {
             },
             deleteAccount: {
                 try await mapped { _ = try unwrap(try await client.perform(mutation: GQL.DeleteAccountMutation())) }
+            },
+            previewVoice: {
+                try await mapped {
+                    let raw = try unwrap(try await client.perform(mutation: GQL.PreviewVoiceMutation())).previewVoice
+                    guard let url = URL(string: raw) else { throw APIError.server("Bad preview URL") }
+                    return url
+                }
             }
         )
     }

@@ -8,6 +8,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section { NavigationLink("Re-record my voice") { RerecordVoiceView() } }
                 Section { Button("Sign out") { app.signOut() } }
                 Section {
                     Button("Delete account", role: .destructive) { confirmDelete = true }
@@ -28,4 +29,10 @@ struct SettingsView: View {
             if case APIError.unauthenticated = error { app.signOut() }
         }
     }
+}
+
+/// Hosts the enrollment flow from Settings and pops back when the new voice is kept.
+private struct RerecordVoiceView: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View { EnrollVoiceView(isRerecord: true) { _ in dismiss() } }
 }

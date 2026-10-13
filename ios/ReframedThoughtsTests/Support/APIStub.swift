@@ -16,9 +16,10 @@ extension API {
         sessions: @escaping @Sendable () async throws -> [Session] = { [] },
         session: @escaping @Sendable (String) async throws -> Session? = { _ in nil },
         watchSession: @escaping @Sendable (String) -> AsyncThrowingStream<Session, Error> = { _ in AsyncThrowingStream { $0.finish() } },
-        deleteAccount: @escaping @Sendable () async throws -> Void = {}
+        deleteAccount: @escaping @Sendable () async throws -> Void = {},
+        previewVoice: @escaping @Sendable () async throws -> URL = { throw APIError.server("unstubbed previewVoice") }
     ) -> API {
-        API(signIn: signIn, me: me, enrollVoice: enrollVoice, createSession: createSession, sessions: sessions, session: session, watchSession: watchSession, deleteAccount: deleteAccount)
+        API(signIn: signIn, me: me, enrollVoice: enrollVoice, createSession: createSession, sessions: sessions, session: session, watchSession: watchSession, deleteAccount: deleteAccount, previewVoice: previewVoice)
     }
 }
 
