@@ -1,0 +1,8 @@
+# Local backend: same image as production, env from backend/.env.
+services:
+  backend:
+    build: .
+    env_file: .env
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

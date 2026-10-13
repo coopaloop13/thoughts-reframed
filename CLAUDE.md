@@ -12,5 +12,5 @@ Speak a negative thought; get it back as an affirmation in a clone of your own v
 - Secrets never go in the repo. Backend reads env vars (`backend/.env.example`); production uses `wrangler secret put`.
 
 ## Run locally
-- Backend: `cd backend && cp .env.example .env` (fill in) `&& npm run dev` → http://localhost:8080/graphql
+- Backend: `cd backend && cp .env.example .env` (fill in) `&& npm run dev` → Docker Compose on http://localhost:8080/graphql (Docker Desktop must be running).
 - iOS: `cd ios && xcodegen generate && open ReframedThoughts.xcodeproj`. The scheme's `API_BASE_URL` env var (enabled by default, `http://localhost:8080`) selects the local backend; `DEV_JWT` (disabled by default) skips Sign in with Apple on the simulator.

@@ -9,7 +9,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "tsx watch --env-file=.env src/server.ts",
+    "dev": "docker compose up --build",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "typecheck": "tsc --noEmit",
@@ -20,7 +20,9 @@
     "smoke": "tsx --env-file=.env scripts/smoke.ts",
     "voice:start": "scripts/voice-pod.sh start",
     "voice:stop": "scripts/voice-pod.sh stop",
-    "voice:status": "scripts/voice-pod.sh status"
+    "voice:status": "scripts/voice-pod.sh status",
+    "dev:down": "docker compose down",
+    "dev:logs": "docker compose logs -f backend"
   },
   "keywords": [],
   "author": "",
