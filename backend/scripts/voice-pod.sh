@@ -8,7 +8,7 @@ set -a; . ./.env; set +a
 : "${RUNPOD_POD_ID:?set RUNPOD_POD_ID in backend/.env}"
 api() { curl -sS --max-time 60 -H "Authorization: Bearer $RUNPOD_API_KEY" -H 'content-type: application/json' "$@"; }
 pod="https://api.runpod.io/v2/pods/$RUNPOD_POD_ID"
-status() { api "$pod" | python3 -c 'import json,sys; p=json.load(sys.stdin); print(f"{p[\"name\"]} {p[\"id\"]}: {p[\"status\"]}  ${p[\"cost\"]}/hr while running  gpu={p[\"gpu\"][\"id\"]}")'; }
+status() { api "$pod" | python3 -c "import json,sys; p=json.load(sys.stdin); print(f\"{p['name']} {p['id']}: {p['status']}  {p['cost']} USD/hr while running  gpu={p['gpu']['id']}\")"; }
 case "${1:-}" in
   start) api -X POST -d '{"action":"start"}' "$pod" >/dev/null && echo "start requested"
          # ponytail: fixed 3-minute wait for /health; VoiceStudio boots in ~1 min once the image is cached
