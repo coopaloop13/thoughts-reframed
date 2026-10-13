@@ -6,6 +6,8 @@ enum APIError: Error, Equatable {
 
     static let lostConnection = "Lost connection before the affirmation was ready. Check History."
 
+    static let networkUnavailable = "Can't reach the server. Check your connection and try again."
+
     static func from(code: String?, message: String) -> APIError {
         switch code {
         case "UNAUTHENTICATED": .unauthenticated

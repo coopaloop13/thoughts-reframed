@@ -11,8 +11,8 @@ struct APIErrorTests {
         #expect(APIError.from(code: nil, message: "Unexpected error.") == .server("Unexpected error."))
     }
     @Test func mapsSocketDropsToReadableMessage() {
-        #expect(API.mapError(URLError(.notConnectedToInternet)) as? APIError == .transport(APIError.lostConnection))
-        #expect(API.mapError(URLError(.cancelled)) as? APIError == .transport("cancelled"))
-        #expect(API.mapError(CancellationError()) as? APIError == .transport("cancelled"))
+        #expect(API.mapError(URLError(.notConnectedToInternet)) as? APIError == .transport(APIError.networkUnavailable))
+        #expect(API.mapError(URLError(.cancelled)) is CancellationError)
+        #expect(API.mapError(CancellationError()) is CancellationError)
     }
 }

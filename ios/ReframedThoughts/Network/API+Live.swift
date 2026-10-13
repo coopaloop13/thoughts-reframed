@@ -60,7 +60,11 @@ extension API {
                                 if s.status.isTerminal { break }
                             }
                             continuation.finish()
-                        } catch { continuation.finish(throwing: mapError(error)) }
+                        } catch {
+                            let e = mapError(error)
+                            continuation.finish(throwing: (e as? APIError) == .transport(APIError.networkUnavailable)
+                                                ? APIError.transport(APIError.lostConnection) : e)
+                        }
                     }
                     continuation.onTermination = { _ in task.cancel() }
                 }
@@ -82,11 +86,12 @@ extension API {
     }
     static func mapError(_ error: Error) -> Error {
         if let e = error as? APIError { return e }
-        if error is CancellationError || (error as? URLError)?.code == .cancelled { return APIError.transport("cancelled") }
+        if error is CancellationError { return error }
+        if (error as? URLError)?.code == .cancelled { return CancellationError() }
         if case .graphQLErrors(let errors) = error as? WebSocketTransport.Error, let first = errors.first {
             return apiError(first)
         }
-        if error is WebSocketTransport.Error || error is URLError { return APIError.transport(APIError.lostConnection) }
+        if error is WebSocketTransport.Error || error is URLError { return APIError.transport(APIError.networkUnavailable) }
         return APIError.transport(error.localizedDescription)
     }
     /// Runs `body`, converting any thrown error to `APIError`.
