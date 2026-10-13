@@ -72,7 +72,7 @@ describe('deleteAccount', () => {
     expect(await deps.db.select().from(users)).toHaveLength(0);
     expect(await deps.db.select().from(sessions)).toHaveLength(0);
     const me = await gql(yoga, { query: '{ me { id } }' }, token);
-    expect(me.errors?.[0].extensions?.code).toBe('NOT_FOUND');
+    expect(me.errors?.[0].extensions?.code).toBe('UNAUTHENTICATED');
   });
   it('is retry-safe when R2 deletion fails', async () => {
     const { yoga, apple, deps, fakes } = await makeTestDeps();

@@ -12,7 +12,7 @@ export const UserType = builder.objectRef<UserRow>('User').implement({
 
 export async function loadUser(ctx: { deps: { db: import('../db/client.js').Db } }, id: string): Promise<UserRow> {
   const [u] = await ctx.deps.db.select().from(users).where(eq(users.id, id));
-  if (!u) throw gqlError('NOT_FOUND', 'User not found');
+  if (!u) throw gqlError('UNAUTHENTICATED', 'User not found');
   return u;
 }
 
