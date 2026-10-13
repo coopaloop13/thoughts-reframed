@@ -1,5 +1,5 @@
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createReframer } from '../../src/clients/openai.js';
 import { REFRAME_SYSTEM_PROMPT } from '../../src/pipeline/reframe-prompt.js';
 import { msw } from '../setup.js';
@@ -25,5 +25,13 @@ describe('reframer', () => {
   it('throws on empty content', async () => {
     msw.use(http.post(url, () => HttpResponse.json({ choices: [{ message: { content: '' } }] })));
     await expect(reframe('x')).rejects.toThrow('OpenAI: empty reframe');
+  });
+  it('passes a timeout signal to fetch', async () => {
+    msw.use(http.post(url, () => HttpResponse.json({ choices: [{ message: { content: 'ok' } }] })));
+    const spy = vi.spyOn(globalThis, 'fetch');
+    try {
+      await reframe('x');
+      expect(spy.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    } finally { spy.mockRestore(); }
   });
 });
