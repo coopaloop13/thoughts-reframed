@@ -1,0 +1,29 @@
+# backend
+
+GraphQL API for Reframed Thoughts. Node 22, ESM, TypeScript.
+
+## Commands
+- `npm test` — vitest, no network (msw errors on unhandled requests), Postgres via pglite in memory.
+- `npm run dev` — tsx watch on :8080. `npm run typecheck`.
+- `npm run db:generate` — drizzle-kit generate migrations from `src/db/schema.ts`. `npm run db:migrate` — apply to `DATABASE_URL`.
+- `npm run schema:export` — writes `schema.graphql` (iOS Apollo codegen reads it). Run after any schema change.
+- `npx wrangler deploy` — builds the Dockerfile, pushes the image, deploys the Worker proxy.
+
+## Layout
+- `src/server.ts` boot: env → db → clients → yoga + graphql-ws → sweeper → listen.
+- `src/app.ts` `createApp(deps)` returns the Yoga instance. `Deps` is the only seam; tests pass fakes.
+- `src/schema/` Pothos types and resolvers. `src/pipeline/` transcribe → reframe → synthesize. `src/clients/` r2, voicestudio, openai. `src/auth/` Apple token verify, our JWT. `src/db/` drizzle schema + `drizzle/` migrations.
+- `worker/index.ts` Cloudflare Worker: `getContainer(env.BACKEND).fetch(request)`.
+
+## Conventions
+- Stack: graphql-yoga 5, @pothos/core 4, graphql-ws 6 (`import ... from 'graphql-ws/use/ws'`), drizzle-orm, jose, aws4fetch.
+- Session status order: UPLOADED → TRANSCRIBING → REFRAMING → SYNTHESIZING → COMPLETED | FAILED. Every transition writes the row then publishes `session` on pubsub.
+- Errors to clients use `GraphQLError` with `extensions.code` ∈ UNAUTHENTICATED, INVALID_APPLE_TOKEN, VOICE_NOT_ENROLLED, NOT_FOUND.
+- Env vars: see `.env.example`. Production secrets: `wrangler secret put <NAME>`; the Worker passes them to the container as `envVars`.
+
+## External services (one-time setup)
+1. VoiceStudio on a RunPod GPU pod: image `ghcr.io/debpalash/voicestudio:stable`, volume mounted at `/app/omnivoice_data`, env `OMNIVOICE_SERVER_MODE=1`, `OMNIVOICE_API_KEY=<random>`, expose port 3900 via RunPod HTTPS proxy → `VOICESTUDIO_URL`.
+2. Neon Postgres project → pooled connection string → `DATABASE_URL`.
+3. R2 bucket + S3 API token → `R2_*`.
+4. Apple Developer: enable Sign in with Apple on the app's bundle id → `APPLE_BUNDLE_ID`.
+5. OpenAI API key → `OPENAI_API_KEY`, `OPENAI_MODEL`.
