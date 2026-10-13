@@ -1,0 +1,2 @@
+// Local, gitignored. Copy to Local.xcconfig and set a dev token to skip Sign in with Apple on the simulator (see ios/CLAUDE.md).
+DEV_JWT = 

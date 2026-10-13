@@ -3,3 +3,4 @@ DerivedData/
 xcuserdata/
 Tools/.build/
 Tools/apollo-ios-cli
+Local.xcconfig

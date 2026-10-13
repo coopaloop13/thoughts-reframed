@@ -5,6 +5,7 @@ options:
     iOS: "17.0"
   xcodeVersion: "27.0"
   createIntermediateGroups: true
+  disabledValidations: [missingConfigFiles]
 packages:
   Apollo:
     url: https://github.com/apollographql/apollo-ios
@@ -21,6 +22,8 @@ targets:
     sources:
       - path: ReframedThoughts
         excludes: ["Resources/Info.plist"]
+    configFiles:
+      Debug: Local.xcconfig
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.coopertech.reframedthoughts
@@ -55,8 +58,8 @@ schemes:
           value: http://localhost:8080
           isEnabled: true
         - variable: DEV_JWT
-          value: ""
-          isEnabled: false
+          value: $(DEV_JWT)
+          isEnabled: true
     test:
       config: Debug
       targets: [ReframedThoughtsTests]
