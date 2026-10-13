@@ -9,8 +9,8 @@ import { makeTestDb } from './db.js';
 export async function makeTestDeps() {
   const apple = await makeAppleSigner();
   const r2 = new Map<string, Uint8Array>();
-  const voice = { profiles: new Map<string, string>(), transcript: 'I always mess things up', synthesized: new Uint8Array([1, 2, 3]), fail: undefined as undefined | 'transcribe' | 'synthesize' | 'createProfile' };
-  const fakes = { r2, voice, reframeFail: false };
+  const voice = { profiles: new Map<string, string>(), transcript: 'I always mess things up', synthesized: new Uint8Array([1, 2, 3]), fail: undefined as undefined | 'transcribe' | 'synthesize' | 'createProfile' | 'deleteProfile' };
+  const fakes = { r2, voice, reframeFail: false, r2DeleteFail: false };
   let profileSeq = 0;
   const deps: Deps = {
     db: await makeTestDb(),
@@ -21,12 +21,12 @@ export async function makeTestDeps() {
     r2: {
       put: async (k, b) => { r2.set(k, b); },
       get: async (k) => { const v = r2.get(k); if (!v) throw new Error(`no object ${k}`); return v; },
-      delete: async (k) => { r2.delete(k); },
+      delete: async (k) => { if (fakes.r2DeleteFail) throw new Error('r2 down'); r2.delete(k); },
       presignGet: async (k) => `https://r2.test/${k}?signed`,
     },
     voice: {
       createProfile: async ({ name }) => { if (voice.fail === 'createProfile') throw new Error('voicestudio 500'); const id = `vp${++profileSeq}`; voice.profiles.set(id, name); return id; },
-      deleteProfile: async (id) => { voice.profiles.delete(id); },
+      deleteProfile: async (id) => { if (voice.fail === 'deleteProfile') throw new Error('voicestudio 500'); voice.profiles.delete(id); },
       transcribe: async () => { if (voice.fail === 'transcribe') throw new Error('voicestudio 500'); return voice.transcript; },
       synthesize: async () => { if (voice.fail === 'synthesize') throw new Error('voicestudio 500'); return voice.synthesized; },
     },

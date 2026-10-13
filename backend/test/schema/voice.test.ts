@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { sessions, users } from '../../src/db/schema.js';
 import { gql, makeTestDeps, signIn } from '../helpers/app.js';
@@ -40,6 +40,21 @@ describe('enrollVoice', () => {
     expect(r.errors?.[0].message).toBe('Unexpected error.');
     const me = await gql(yoga, { query: '{ me { hasVoice } }' }, token);
     expect(me.data.me.hasVoice).toBe(false);
+    await gql(yoga, { query: 'mutation{ deleteAccount }' }, token);
+    expect(fakes.r2.size).toBe(0);
+  });
+  it('keeps the new profile when deleting the old one fails', async () => {
+    const { yoga, apple, deps, fakes } = await makeTestDeps();
+    const { token, user } = await signIn(yoga, apple);
+    await gqlUpload(yoga, { query: ENROLL, variables: { t: 'a' }, file: sample }, token);
+    fakes.voice.fail = 'deleteProfile';
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = await gqlUpload(yoga, { query: ENROLL, variables: { t: 'b' }, file: sample }, token);
+    spy.mockRestore();
+    expect(r.errors).toBeUndefined();
+    expect(r.data.enrollVoice.hasVoice).toBe(true);
+    const [row] = await deps.db.select().from(users).where(eq(users.id, user.id));
+    expect(row.voiceProfileId).toBe('vp2');
   });
 });
 
@@ -58,5 +73,21 @@ describe('deleteAccount', () => {
     expect(await deps.db.select().from(sessions)).toHaveLength(0);
     const me = await gql(yoga, { query: '{ me { id } }' }, token);
     expect(me.errors?.[0].extensions?.code).toBe('NOT_FOUND');
+  });
+  it('is retry-safe when R2 deletion fails', async () => {
+    const { yoga, apple, deps, fakes } = await makeTestDeps();
+    const { token } = await signIn(yoga, apple);
+    await gqlUpload(yoga, { query: ENROLL, variables: { t: 'a' }, file: sample }, token);
+    fakes.r2DeleteFail = true;
+    const r1 = await gql(yoga, { query: 'mutation{ deleteAccount }' }, token);
+    expect(r1.errors).toBeDefined();
+    expect(await deps.db.select().from(users)).toHaveLength(1);
+    expect(fakes.voice.profiles.size).toBe(1);
+    fakes.r2DeleteFail = false;
+    const r2 = await gql(yoga, { query: 'mutation{ deleteAccount }' }, token);
+    expect(r2.data.deleteAccount).toBe(true);
+    expect(fakes.voice.profiles.size).toBe(0);
+    expect(fakes.r2.size).toBe(0);
+    expect(await deps.db.select().from(users)).toHaveLength(0);
   });
 });
