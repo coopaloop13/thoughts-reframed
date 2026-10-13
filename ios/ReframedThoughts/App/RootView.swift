@@ -10,13 +10,16 @@ struct RootView: View {
             case .enroll: EnrollVoiceView()
             case .main: MainTabView()
             case .failed(let msg):
-                VStack(spacing: 16) {
+                VStack(spacing: Theme.spacing) {
                     Text(msg).multilineTextAlignment(.center)
-                    Button("Retry") { Task { await app.start() } }.buttonStyle(.borderedProminent)
-                    Button("Sign out", role: .destructive) { app.signOut() }
-                }.padding()
+                    Button("Retry") { Task { await app.start() } }.buttonStyle(PrimaryButtonStyle())
+                    Button("Sign out") { app.signOut() }.buttonStyle(SecondaryButtonStyle())
+                }.padding(Theme.spacing)
             }
         }
+        .foregroundStyle(Color.bark)
+        .tint(.forest)
+        .background(Color.sand.ignoresSafeArea())
         .task { await app.start() }
     }
 }

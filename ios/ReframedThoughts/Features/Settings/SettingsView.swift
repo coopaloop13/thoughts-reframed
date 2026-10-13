@@ -15,6 +15,9 @@ struct SettingsView: View {
                 } footer: { Text("Deletes your voice clone, recordings and affirmations. This cannot be undone.") }
                 if let error { Section { Text(error).foregroundStyle(.red) } }
             }
+            .listRowBackground(Color.surface)
+            .scrollContentBackground(.hidden)
+            .background(Color.sand.ignoresSafeArea())
             .navigationTitle("Settings")
             .confirmationDialog("Delete your account and all recordings?", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Delete everything", role: .destructive) { Task { await deleteAccount() } }

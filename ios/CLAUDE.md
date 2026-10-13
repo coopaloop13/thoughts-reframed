@@ -20,6 +20,7 @@ SwiftUI iPhone app for Reframed Thoughts. Swift 6, iOS 17+, Apollo iOS 2.x.
 ## Conventions
 - TDD: failing test first for every ViewModel/model/service change.
 - Views never import Apollo; they use `API` and plain models (`User`, `Session`).
+- Theme: semantic colours live in `ReframedThoughts/Resources/Assets.xcassets` (Forest, OnForest, Clay, OnClay, Sand, Surface, Bark, Muted, Border; light+dark) and are exposed in `App/Theme.swift` as `Color.forest` etc., with `Font.display(_:)` (system serif) for titles/affirmations, `.card()`, and `PrimaryButtonStyle` / `SecondaryButtonStyle` / `RecordButtonStyle`. Never use raw hex or `.blue`-style colours in views; add a colourset and a `Theme.colorNames` entry instead (ThemeTests checks every name exists).
 - Any `UNAUTHENTICATED` error → `AppState.signOut()`.
 - Dev loop: run the backend (`cd ../backend && npm run dev`), scheme env `API_BASE_URL=http://localhost:8080`. To skip Sign in with Apple on the simulator, enable the `DEV_JWT` scheme variable with a token minted by the backend (`node -e` using `signUserToken`, see backend/CLAUDE.md).
 - Config: `API_BASE_URL` env var → else `APIBaseURL` from Info.plist (production Worker URL).
