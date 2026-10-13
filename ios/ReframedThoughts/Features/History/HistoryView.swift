@@ -25,9 +25,9 @@ struct HistoryView: View {
                     }
                 }
             }
+            .task { if vm == nil { vm = HistoryViewModel(api: app.api, onUnauthenticated: { app.signOut() }) }; await vm?.load() }
             .navigationTitle("History")
             .navigationDestination(for: Session.self) { SessionDetailView(session: $0) }
         }
-        .task { if vm == nil { vm = HistoryViewModel(api: app.api, onUnauthenticated: { app.signOut() }) }; await vm?.load() }
     }
 }
