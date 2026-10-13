@@ -14,7 +14,7 @@ builder.scalarType('DateTime', {
 });
 builder.scalarType('File', {
   serialize: () => { throw new Error('File is input-only'); },
-  parseValue: (v) => { if (v instanceof File) return v; throw new Error('Expected a File upload'); },
+  parseValue: (v) => { if (v && typeof (v as File).arrayBuffer === 'function') return v as File; /* Yoga's ponyfilled File is not instanceof global File */ throw new Error('Expected a File upload'); },
 });
 
 builder.queryType({});
