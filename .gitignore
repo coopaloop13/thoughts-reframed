@@ -5,3 +5,4 @@ node_modules/
 xcuserdata/
 DerivedData/
 backend/dist/
+backend/test/fixtures/*.m4a

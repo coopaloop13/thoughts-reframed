@@ -16,7 +16,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "schema:export": "tsx scripts/export-schema.ts",
-    "typecheck:worker": "tsc -p worker/tsconfig.json"
+    "typecheck:worker": "tsc -p worker/tsconfig.json",
+    "smoke": "tsx scripts/smoke.ts"
   },
   "keywords": [],
   "author": "",
