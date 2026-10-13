@@ -12,6 +12,7 @@ export async function makeTestDeps() {
   const voice = { profiles: new Map<string, string>(), transcript: 'I always mess things up', synthesized: new Uint8Array([1, 2, 3]), fail: undefined as undefined | 'transcribe' | 'synthesize' | 'createProfile' | 'deleteProfile' };
   const fakes = { r2, voice, reframeFail: false, r2DeleteFail: false };
   let profileSeq = 0;
+  const started: string[] = [];
   const deps: Deps = {
     db: await makeTestDb(),
     pubsub: createPubSub(),
@@ -30,9 +31,10 @@ export async function makeTestDeps() {
       transcribe: async () => { if (voice.fail === 'transcribe') throw new Error('voicestudio 500'); return voice.transcript; },
       synthesize: async () => { if (voice.fail === 'synthesize') throw new Error('voicestudio 500'); return voice.synthesized; },
     },
+    startPipeline: (id) => { started.push(id); },
     reframe: async (t) => { if (fakes.reframeFail) throw new Error('openai 500'); return `Reframed: ${t}`; },
   };
-  return { deps, apple, fakes, yoga: createApp(deps) };
+  return { deps, apple, fakes, started, yoga: createApp(deps) };
 }
 
 export async function gql(yoga: YogaServerInstance<any, any>, body: { query: string; variables?: Record<string, unknown> }, token?: string) {

@@ -26,4 +26,5 @@ export type Deps = {
   jwtSecret: Uint8Array;
   appleJwks: JWTVerifyGetKey;
   appleAudience: string;
+  startPipeline: (sessionId: string) => void;
 };
