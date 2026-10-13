@@ -1,0 +1,13 @@
+{
+  "schemaNamespace": "GQL",
+  "input": {
+    "schemaSearchPaths": ["../backend/schema.graphql"],
+    "operationSearchPaths": ["ReframedThoughts/GraphQL/**/*.graphql"]
+  },
+  "output": {
+    "schemaTypes": { "path": "ReframedThoughts/Generated", "moduleType": { "embeddedInTarget": { "name": "ReframedThoughts", "accessModifier": "internal" } } },
+    "operations": { "inSchemaModule": {} },
+    "testMocks": { "none": {} }
+  },
+  "options": { "schemaDocumentation": "exclude" }
+}
