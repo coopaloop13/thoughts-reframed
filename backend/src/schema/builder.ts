@@ -5,8 +5,9 @@ export type Context = { deps: Deps; userId: string | null };
 
 export const builder = new SchemaBuilder<{
   Context: Context;
+  DefaultFieldNullability: false;
   Scalars: { DateTime: { Input: Date; Output: Date }; File: { Input: File; Output: never } };
-}>({});
+}>({ defaultFieldNullability: false });
 
 builder.scalarType('DateTime', {
   serialize: (d) => d.toISOString(),
