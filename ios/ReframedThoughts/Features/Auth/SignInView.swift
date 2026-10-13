@@ -30,6 +30,7 @@ struct SignInView: View {
             }
             try await app.signIn(identityToken: token)
         } catch {
+            if (error as? ASAuthorizationError)?.code == .canceled { return }
             self.error = (error as? APIError)?.userMessage ?? error.localizedDescription
         }
     }
