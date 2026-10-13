@@ -1,0 +1,5 @@
+*.xcodeproj
+DerivedData/
+xcuserdata/
+Tools/.build/
+Tools/apollo-ios-cli

@@ -3,7 +3,7 @@
 Speak a negative thought; get it back as an affirmation in a clone of your own voice.
 
 - `backend/` — Node/TypeScript GraphQL API, Docker image on Cloudflare Containers. See `backend/CLAUDE.md`.
-- `ios/` — SwiftUI app using Apollo iOS; planned next. `ios/CLAUDE.md` will be created with it.
+- `ios/` — SwiftUI app using Apollo iOS. See `ios/CLAUDE.md`.
 - `docs/superpowers/specs/` — design specs. `docs/superpowers/plans/` — implementation plans.
 
 ## Rules
@@ -13,4 +13,4 @@ Speak a negative thought; get it back as an affirmation in a clone of your own v
 
 ## Run locally
 - Backend: `cd backend && cp .env.example .env` (fill in) `&& npm run dev` → http://localhost:8080/graphql
-- iOS: open `ios/ReframedThoughts.xcodeproj`, scheme `ReframedThoughts`, `LOCAL_DEV` build setting points at localhost.
+- iOS: `cd ios && xcodegen generate && open ReframedThoughts.xcodeproj`. The scheme's `API_BASE_URL` env var (enabled by default, `http://localhost:8080`) selects the local backend; `DEV_JWT` (disabled by default) skips Sign in with Apple on the simulator.

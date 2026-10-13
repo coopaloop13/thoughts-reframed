@@ -1,0 +1,11 @@
+fragment SessionFields on Session {
+  id status transcript reframedText audioUrl error createdAt
+}
+query Me { me { id hasVoice } }
+query Sessions($limit: Int, $before: DateTime) { sessions(limit: $limit, before: $before) { ...SessionFields } }
+query Session($id: ID!) { session(id: $id) { ...SessionFields } }
+mutation SignInWithApple($identityToken: String!) { signInWithApple(identityToken: $identityToken) { token user { id hasVoice } } }
+mutation EnrollVoice($sample: File!, $referenceText: String!) { enrollVoice(sample: $sample, referenceText: $referenceText) { id hasVoice } }
+mutation CreateSession($recording: File!) { createSession(recording: $recording) { ...SessionFields } }
+mutation DeleteAccount { deleteAccount }
+subscription SessionUpdated($id: ID!) { sessionUpdated(id: $id) { ...SessionFields } }
