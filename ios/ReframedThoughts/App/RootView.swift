@@ -14,6 +14,3 @@ struct RootView: View {
         .task { await app.start() }
     }
 }
-
-// Temporary placeholders; Task 8 replaces it.
-struct MainTabView: View { var body: some View { Text("Main") } }
