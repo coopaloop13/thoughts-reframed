@@ -9,7 +9,7 @@ import { makeTestDb } from './db.js';
 export async function makeTestDeps() {
   const apple = await makeAppleSigner();
   const r2 = new Map<string, Uint8Array>();
-  const voice = { profiles: new Map<string, string>(), transcript: 'I always mess things up', synthesized: new Uint8Array([1, 2, 3]), fail: undefined as undefined | 'transcribe' | 'synthesize' | 'createProfile' | 'deleteProfile' };
+  const voice = { profiles: new Map<string, string>(), transcript: 'I always mess things up', synthesized: new Uint8Array([1, 2, 3]), lastSynthesize: undefined as undefined | { text: string; voice: string }, fail: undefined as undefined | 'transcribe' | 'synthesize' | 'createProfile' | 'deleteProfile' };
   const fakes = { r2, voice, reframeFail: false, r2DeleteFail: false };
   let profileSeq = 0;
   const started: string[] = [];
@@ -29,7 +29,7 @@ export async function makeTestDeps() {
       createProfile: async ({ name }) => { if (voice.fail === 'createProfile') throw new Error('voicestudio 500'); const id = `vp${++profileSeq}`; voice.profiles.set(id, name); return id; },
       deleteProfile: async (id) => { if (voice.fail === 'deleteProfile') throw new Error('voicestudio 500'); voice.profiles.delete(id); },
       transcribe: async () => { if (voice.fail === 'transcribe') throw new Error('voicestudio 500'); return voice.transcript; },
-      synthesize: async () => { if (voice.fail === 'synthesize') throw new Error('voicestudio 500'); return voice.synthesized; },
+      synthesize: async (a) => { if (voice.fail === 'synthesize') throw new Error('voicestudio 500'); voice.lastSynthesize = a; return voice.synthesized; },
     },
     startPipeline: (id) => { started.push(id); },
     reframe: async (t) => { if (fakes.reframeFail) throw new Error('openai 500'); return `Reframed: ${t}`; },
