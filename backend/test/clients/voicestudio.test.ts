@@ -1,5 +1,5 @@
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createVoiceStudio } from '../../src/clients/voicestudio.js';
 import { msw } from '../setup.js';
 
@@ -38,5 +38,13 @@ describe('voicestudio client', () => {
   it('throws with status on failure', async () => {
     msw.use(http.post(`${base}/v1/audio/speech`, () => new HttpResponse('boom', { status: 500 })));
     await expect(vs.synthesize({ text: 'x', voice: 'v' })).rejects.toThrow('VoiceStudio POST /v1/audio/speech: 500');
+  });
+  it('passes a timeout signal to fetch', async () => {
+    msw.use(http.delete(`${base}/profiles/p1`, () => new HttpResponse(null, { status: 200 })));
+    const spy = vi.spyOn(globalThis, 'fetch');
+    try {
+      await vs.deleteProfile('p1');
+      expect(spy.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    } finally { spy.mockRestore(); }
   });
 });

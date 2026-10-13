@@ -2,7 +2,7 @@ import type { VoiceStudio } from '../deps.js';
 
 export function createVoiceStudio(cfg: { baseUrl: string; apiKey: string }): VoiceStudio {
   const call = async (method: string, path: string, init: RequestInit = {}, okStatuses: number[] = []) => {
-    const res = await fetch(cfg.baseUrl + path, { ...init, method, headers: { authorization: `Bearer ${cfg.apiKey}`, ...(init.headers ?? {}) } });
+    const res = await fetch(cfg.baseUrl + path, { ...init, method, signal: AbortSignal.timeout(180_000), headers: { authorization: `Bearer ${cfg.apiKey}`, ...(init.headers ?? {}) } });
     if (!res.ok && !okStatuses.includes(res.status)) throw new Error(`VoiceStudio ${method} ${path}: ${res.status}`);
     return res;
   };
