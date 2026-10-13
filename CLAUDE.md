@@ -3,7 +3,7 @@
 Speak a negative thought; get it back as an affirmation in a clone of your own voice.
 
 - `backend/` — Node/TypeScript GraphQL API, Docker image on Cloudflare Containers. See `backend/CLAUDE.md`.
-- `ios/` — SwiftUI app using Apollo iOS. See `ios/CLAUDE.md`.
+- `ios/` — SwiftUI app using Apollo iOS; planned next. `ios/CLAUDE.md` will be created with it.
 - `docs/superpowers/specs/` — design specs. `docs/superpowers/plans/` — implementation plans.
 
 ## Rules

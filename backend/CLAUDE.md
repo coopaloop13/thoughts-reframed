@@ -4,7 +4,10 @@ GraphQL API for Reframed Thoughts. Node 22, ESM, TypeScript.
 
 ## Commands
 - `npm test` — vitest, no network (msw errors on unhandled requests), Postgres via pglite in memory.
-- `npm run dev` — tsx watch on :8080. `npm run typecheck`.
+- `npm run dev` — tsx watch on :8080. `npm run typecheck`, `npm run typecheck:worker`.
+- `npm run build` then `npm start` (runs `dist/src/server.js`).
+- `npm run smoke` — end-to-end against real services; needs `.env` plus `test/fixtures/sample.m4a`; exits 0 only on COMPLETED with audio.
+- `dev` and `smoke` load `.env` via tsx `--env-file`.
 - `npm run db:generate` — drizzle-kit generate migrations from `src/db/schema.ts`. `npm run db:migrate` — apply to `DATABASE_URL`.
 - `npm run schema:export` — writes `schema.graphql` (iOS Apollo codegen reads it). Run after any schema change.
 - `npx wrangler deploy` — builds the Dockerfile, pushes the image, deploys the Worker proxy.
