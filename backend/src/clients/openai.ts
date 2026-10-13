@@ -6,7 +6,7 @@ export function createReframer(cfg: { apiKey: string; model: string }) {
       method: 'POST',
       signal: AbortSignal.timeout(60_000),
       headers: { authorization: `Bearer ${cfg.apiKey}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ model: cfg.model, temperature: 0.7, messages: [
+      body: JSON.stringify({ model: cfg.model, messages: [
         { role: 'system', content: REFRAME_SYSTEM_PROMPT },
         { role: 'user', content: transcript },
       ] }),

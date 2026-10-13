@@ -15,6 +15,7 @@ describe('reframer', () => {
     expect(await reframe('I always mess things up')).toBe('I am capable of learning from mistakes.');
     expect(auth).toBe('Bearer OK');
     expect(body.model).toBe('gpt-test');
+    expect(body.temperature).toBeUndefined();
     expect(body.messages[0]).toEqual({ role: 'system', content: REFRAME_SYSTEM_PROMPT });
     expect(body.messages[1]).toEqual({ role: 'user', content: 'I always mess things up' });
   });
