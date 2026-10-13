@@ -9,7 +9,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch --env-file=.env src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "typecheck": "tsc --noEmit",
@@ -17,7 +17,7 @@
     "db:migrate": "drizzle-kit migrate",
     "schema:export": "tsx scripts/export-schema.ts",
     "typecheck:worker": "tsc -p worker/tsconfig.json",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx --env-file=.env scripts/smoke.ts"
   },
   "keywords": [],
   "author": "",
