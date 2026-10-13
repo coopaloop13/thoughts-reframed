@@ -19,3 +19,4 @@ builder.scalarType('File', {
 
 builder.queryType({});
 builder.mutationType({});
+builder.subscriptionType({});
