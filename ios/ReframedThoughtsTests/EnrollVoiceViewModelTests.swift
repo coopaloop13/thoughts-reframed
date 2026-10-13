@@ -53,4 +53,30 @@ struct EnrollVoiceViewModelTests {
         vm.retake()
         #expect(!FileManager.default.fileExists(atPath: url.path))
     }
+
+    @Test func uploadThenPreviewsVoice() async {
+        let url = URL(string: "https://r2/preview.mp3")!
+        let api = API.stub(enrollVoice: { _, _ in User(id: "u", hasVoice: true) }, previewVoice: { url })
+        let vm = EnrollVoiceViewModel(api: api, recorder: recording(duration: 12))
+        await vm.record(); vm.stop(); await vm.upload()
+        #expect(vm.phase == .preview(url, User(id: "u", hasVoice: true)))
+    }
+    @Test func keepFromPreviewFinishes() async {
+        let api = API.stub(enrollVoice: { _, _ in User(id: "u", hasVoice: true) }, previewVoice: { URL(string: "https://r2/p.mp3")! })
+        let vm = EnrollVoiceViewModel(api: api, recorder: recording(duration: 12))
+        await vm.record(); vm.stop(); await vm.upload(); vm.keep()
+        #expect(vm.phase == .done(User(id: "u", hasVoice: true)))
+    }
+    @Test func retakeFromPreviewRestarts() async {
+        let api = API.stub(enrollVoice: { _, _ in User(id: "u", hasVoice: true) }, previewVoice: { URL(string: "https://r2/p.mp3")! })
+        let vm = EnrollVoiceViewModel(api: api, recorder: recording(duration: 12))
+        await vm.record(); vm.stop(); await vm.upload(); vm.retake()
+        #expect(vm.phase == .idle)
+    }
+    @Test func previewFailureStillCompletesEnrollment() async {
+        let api = API.stub(enrollVoice: { _, _ in User(id: "u", hasVoice: true) }, previewVoice: { throw APIError.transport("down") })
+        let vm = EnrollVoiceViewModel(api: api, recorder: recording(duration: 12))
+        await vm.record(); vm.stop(); await vm.upload()
+        #expect(vm.phase == .done(User(id: "u", hasVoice: true)))
+    }
 }

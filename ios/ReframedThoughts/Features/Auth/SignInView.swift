@@ -3,23 +3,28 @@ import SwiftUI
 
 struct SignInView: View {
     @Environment(AppState.self) private var app
+    @Environment(\.colorScheme) private var scheme
     @State private var error: String?
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: Theme.spacing) {
             Spacer()
-            Text("Reframed").font(.largeTitle.bold())
-            Text("Say the thought. Hear it reframed, in your own voice.").multilineTextAlignment(.center).foregroundStyle(.secondary)
+            Image(systemName: "leaf.fill").font(.system(size: 44)).foregroundStyle(Color.forest)
+            Text("Reframed").font(.display(44))
+            Text("Say the thought out loud.\nHear it back, kinder, in your own voice.")
+                .multilineTextAlignment(.center).foregroundStyle(Color.muted)
             Spacer()
             SignInWithAppleButton(.signIn) { req in
                 req.requestedScopes = []
             } onCompletion: { result in
                 Task { await complete(result) }
             }
-            .signInWithAppleButtonStyle(.black).frame(height: 50)
-            if let error { Text(error).foregroundStyle(.red).font(.footnote) }
+            .signInWithAppleButtonStyle(scheme == .dark ? .white : .black)
+            .frame(height: 52).clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            if let error { Text(error).foregroundStyle(.red).font(.footnote).multilineTextAlignment(.center) }
         }
-        .padding()
+        .padding(Theme.spacing)
+        .background(Color.sand.ignoresSafeArea())
     }
 
     private func complete(_ result: Result<ASAuthorization, Error>) async {

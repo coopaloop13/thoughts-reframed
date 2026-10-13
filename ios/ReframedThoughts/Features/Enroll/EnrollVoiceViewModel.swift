@@ -3,12 +3,13 @@ import Observation
 
 @MainActor @Observable
 final class EnrollVoiceViewModel {
-    enum Phase: Equatable { case idle, recording, review(URL), uploading, done(User), failed(String), permissionDenied }
+    enum Phase: Equatable { case idle, recording, review(URL), uploading, preview(URL, User), done(User), failed(String), permissionDenied }
     static let minimumSeconds: TimeInterval = 8
     static let referenceText = """
-    I am speaking in my own voice so this app can learn how I sound. Some days are harder than others, and that is okay. \
-    I can notice a difficult thought, take a breath, and choose a kinder way to say it to myself. \
-    I am allowed to make mistakes, to rest, and to try again tomorrow.
+    Hi, this is my voice, and I'm recording it so the app can learn how I sound when I speak. \
+    Have you ever noticed how one difficult thought can color a whole afternoon? \
+    Some days I'm hard on myself, and that really hurts! \
+    But I can pause, take a breath, and choose a kinder way to say it to myself... one small moment at a time.
     """
 
     private(set) var phase: Phase = .idle
@@ -33,9 +34,14 @@ final class EnrollVoiceViewModel {
     func upload() async {
         guard let fileURL else { return }
         phase = .uploading
-        do { phase = .done(try await api.enrollVoice(fileURL, Self.referenceText)); try? FileManager.default.removeItem(at: fileURL) }
-        catch { phase = .failed((error as? APIError)?.userMessage ?? error.localizedDescription) }
+        let user: User
+        do { user = try await api.enrollVoice(fileURL, Self.referenceText); try? FileManager.default.removeItem(at: fileURL) }
+        catch { phase = .failed((error as? APIError)?.userMessage ?? error.localizedDescription); return }
+        // A failed preview never blocks enrollment: the voice is already saved.
+        if let url = try? await api.previewVoice() { phase = .preview(url, user) } else { phase = .done(user) }
     }
+
+    func keep() { if case .preview(_, let user) = phase { phase = .done(user) } }
 
     func retake() { if let fileURL { try? FileManager.default.removeItem(at: fileURL) }; fileURL = nil; phase = .idle }
 }

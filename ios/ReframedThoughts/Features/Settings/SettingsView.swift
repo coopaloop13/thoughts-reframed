@@ -8,12 +8,16 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section { NavigationLink("Re-record my voice") { RerecordVoiceView() } }
                 Section { Button("Sign out") { app.signOut() } }
                 Section {
                     Button("Delete account", role: .destructive) { confirmDelete = true }
                 } footer: { Text("Deletes your voice clone, recordings and affirmations. This cannot be undone.") }
                 if let error { Section { Text(error).foregroundStyle(.red) } }
             }
+            .listRowBackground(Color.surface)
+            .scrollContentBackground(.hidden)
+            .background(Color.sand.ignoresSafeArea())
             .navigationTitle("Settings")
             .confirmationDialog("Delete your account and all recordings?", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Delete everything", role: .destructive) { Task { await deleteAccount() } }
@@ -28,4 +32,10 @@ struct SettingsView: View {
             if case APIError.unauthenticated = error { app.signOut() }
         }
     }
+}
+
+/// Hosts the enrollment flow from Settings and pops back when the new voice is kept.
+private struct RerecordVoiceView: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View { EnrollVoiceView(isRerecord: true) { _ in dismiss() } }
 }

@@ -8,14 +8,16 @@ struct SessionDetailView: View {
     var body: some View {
         Group {
             switch vm?.phase {
-            case .none, .idle: ProgressView()
+            case .none, .idle: ProgressView().tint(.forest)
             case .done(let s): PlaybackView(session: s)
             case .processing(let status): ProcessingView(label: status.progressLabel)
             case .failed(let msg):
-                VStack(spacing: 12) { Text(msg).multilineTextAlignment(.center); if let raw = session.error { Text(raw).font(.caption2).foregroundStyle(.secondary) } }.padding()
-            default: ProgressView()
+                VStack(spacing: 12) { Text(msg).multilineTextAlignment(.center); if let raw = session.error { Text(raw).font(.caption2).foregroundStyle(Color.muted) } }.padding(Theme.spacing)
+            default: ProgressView().tint(.forest)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.sand.ignoresSafeArea())
         .navigationTitle(session.createdAt.formatted(date: .abbreviated, time: .shortened))
         .task {
             if vm == nil {

@@ -11,6 +11,7 @@ type Mutation {
   createSession(recording: File!): Session!
   deleteAccount: Boolean!
   enrollVoice(referenceText: String!, sample: File!): User!
+  previewVoice: String!
   signInWithApple(identityToken: String!): AuthPayload!
 }
 

@@ -91,3 +91,28 @@ describe('deleteAccount', () => {
     expect(await deps.db.select().from(users)).toHaveLength(0);
   });
 });
+
+describe('previewVoice', () => {
+  it('synthesizes the preview sentence in the user voice, stores it, returns a presigned url', async () => {
+    const { yoga, apple, fakes } = await makeTestDeps();
+    const { token, user } = await signIn(yoga, apple);
+    await gqlUpload(yoga, { query: ENROLL, variables: { t: 'a' }, file: sample }, token);
+    const r = await gql(yoga, { query: 'mutation{ previewVoice }' }, token);
+    expect(r.errors).toBeUndefined();
+    expect(r.data.previewVoice).toBe(`https://r2.test/voices/${user.id}-preview.mp3?signed`);
+    expect(fakes.r2.get(`voices/${user.id}-preview.mp3`)).toEqual(fakes.voice.synthesized);
+    expect(fakes.voice.lastSynthesize).toEqual({ voice: 'vp1', text: "Here's how your reframed thoughts will sound." });
+  });
+  it('fails VOICE_NOT_ENROLLED without a voice', async () => {
+    const { yoga, apple, fakes } = await makeTestDeps();
+    const { token } = await signIn(yoga, apple);
+    const r = await gql(yoga, { query: 'mutation{ previewVoice }' }, token);
+    expect(r.errors?.[0].extensions?.code).toBe('VOICE_NOT_ENROLLED');
+    expect(fakes.r2.size).toBe(0);
+  });
+  it('requires auth', async () => {
+    const { yoga } = await makeTestDeps();
+    const r = await gql(yoga, { query: 'mutation{ previewVoice }' });
+    expect(r.errors?.[0].extensions?.code).toBe('UNAUTHENTICATED');
+  });
+});
