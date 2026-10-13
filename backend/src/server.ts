@@ -63,4 +63,5 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { port } = await startServer(deps, env.PORT);
   console.log(`listening on :${port}`);
   sweepStuckSessions(deps).then((ids) => ids.length && console.log('resumed sessions', ids)).catch((e) => console.error('sweep failed', e));
+  setInterval(() => sweepStuckSessions(deps).catch((e) => console.error('sweep failed', e)), 120_000).unref();
 }
