@@ -26,16 +26,16 @@ final class EnrollVoiceViewModel {
     func stop() {
         let duration = recorder.duration()
         guard let url = recorder.stop() else { phase = .failed("Recording failed."); return }
-        guard duration >= Self.minimumSeconds else { phase = .failed("Please read the whole paragraph (at least 8 seconds)."); return }
+        guard duration >= Self.minimumSeconds else { try? FileManager.default.removeItem(at: url); phase = .failed("Please read the whole paragraph (at least 8 seconds)."); return }
         fileURL = url; phase = .review(url)
     }
 
     func upload() async {
         guard let fileURL else { return }
         phase = .uploading
-        do { phase = .done(try await api.enrollVoice(fileURL, Self.referenceText)) }
+        do { phase = .done(try await api.enrollVoice(fileURL, Self.referenceText)); try? FileManager.default.removeItem(at: fileURL) }
         catch { phase = .failed((error as? APIError)?.userMessage ?? error.localizedDescription) }
     }
 
-    func retake() { fileURL = nil; phase = .idle }
+    func retake() { if let fileURL { try? FileManager.default.removeItem(at: fileURL) }; fileURL = nil; phase = .idle }
 }

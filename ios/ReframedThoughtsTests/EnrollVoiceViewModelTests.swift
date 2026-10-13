@@ -33,4 +33,24 @@ struct EnrollVoiceViewModelTests {
         await vm.record(); vm.stop(); await vm.upload()
         #expect(vm.phase == .failed("Unexpected error."))
     }
+
+    func tempFileRecording(duration: TimeInterval) throws -> (Recording, URL) {
+        let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).m4a")
+        try Data().write(to: url)
+        return (Recording(requestPermission: { .granted }, start: {}, stop: { url }, duration: { duration }), url)
+    }
+    @Test func tooShortTakeDeletesFile() async throws {
+        let (rec, url) = try tempFileRecording(duration: 3)
+        let vm = EnrollVoiceViewModel(api: .stub(), recorder: rec)
+        await vm.record(); vm.stop()
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+    }
+    @Test func retakeDeletesFile() async throws {
+        let (rec, url) = try tempFileRecording(duration: 12)
+        let vm = EnrollVoiceViewModel(api: .stub(), recorder: rec)
+        await vm.record(); vm.stop()
+        #expect(FileManager.default.fileExists(atPath: url.path))
+        vm.retake()
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+    }
 }

@@ -26,20 +26,22 @@ final class AudioRecorder {
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
         try session.setActive(true)
-        let file = FileManager.default.temporaryDirectory.appending(path: "recording_\(Int(Date().timeIntervalSince1970)).m4a")
+        let file = FileManager.default.temporaryDirectory.appending(path: "recording_\(UUID().uuidString).m4a")
         let settings: [String: Any] = [AVFormatIDKey: Int(kAudioFormatMPEG4AAC), AVSampleRateKey: 44_100.0, AVNumberOfChannelsKey: 1, AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue]
         recorder = try AVAudioRecorder(url: file, settings: settings)
         recorder?.record()
         url = file; isRecording = true; duration = 0
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in Task { @MainActor in self?.duration += 0.1 } }
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in Task { @MainActor in guard let self else { return }; self.duration = self.recorder?.currentTime ?? 0 } }
     }
 
     func stop() -> URL? {
         recorder?.stop(); timer?.invalidate(); timer = nil; isRecording = false
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        defer { url = nil }
         return url
     }
 
     var asRecording: Recording {
-        Recording(requestPermission: { await self.requestPermission() }, start: { try self.start() }, stop: { self.stop() }, duration: { self.duration })
+        Recording(requestPermission: { await self.requestPermission() }, start: { try self.start() }, stop: { self.stop() }, duration: { self.recorder?.currentTime ?? 0 })
     }
 }
