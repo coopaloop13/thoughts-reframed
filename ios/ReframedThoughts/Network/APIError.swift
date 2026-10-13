@@ -4,6 +4,8 @@ enum APIError: Error, Equatable {
     case unauthenticated, invalidAppleToken, voiceNotEnrolled, notFound
     case server(String), transport(String)
 
+    static let lostConnection = "Lost connection before the affirmation was ready. Check History."
+
     static func from(code: String?, message: String) -> APIError {
         switch code {
         case "UNAUTHENTICATED": .unauthenticated

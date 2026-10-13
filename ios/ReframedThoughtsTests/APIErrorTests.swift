@@ -1,4 +1,5 @@
 import Testing
+import Foundation
 @testable import ReframedThoughts
 
 struct APIErrorTests {
@@ -8,5 +9,10 @@ struct APIErrorTests {
         #expect(APIError.from(code: "NOT_FOUND", message: "x") == .notFound)
         #expect(APIError.from(code: "INVALID_APPLE_TOKEN", message: "x") == .invalidAppleToken)
         #expect(APIError.from(code: nil, message: "Unexpected error.") == .server("Unexpected error."))
+    }
+    @Test func mapsSocketDropsToReadableMessage() {
+        #expect(API.mapError(URLError(.notConnectedToInternet)) as? APIError == .transport(APIError.lostConnection))
+        #expect(API.mapError(URLError(.cancelled)) as? APIError == .transport("cancelled"))
+        #expect(API.mapError(CancellationError()) as? APIError == .transport("cancelled"))
     }
 }

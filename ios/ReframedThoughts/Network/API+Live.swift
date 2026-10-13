@@ -80,11 +80,13 @@ extension API {
     private static func apiError(_ e: GraphQLError) -> APIError {
         APIError.from(code: e.extensions?["code"] as? String, message: e.message ?? "Unexpected error.")
     }
-    private static func mapError(_ error: Error) -> Error {
+    static func mapError(_ error: Error) -> Error {
         if let e = error as? APIError { return e }
+        if error is CancellationError || (error as? URLError)?.code == .cancelled { return APIError.transport("cancelled") }
         if case .graphQLErrors(let errors) = error as? WebSocketTransport.Error, let first = errors.first {
             return apiError(first)
         }
+        if error is WebSocketTransport.Error || error is URLError { return APIError.transport(APIError.lostConnection) }
         return APIError.transport(error.localizedDescription)
     }
     /// Runs `body`, converting any thrown error to `APIError`.

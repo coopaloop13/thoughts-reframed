@@ -70,7 +70,7 @@ final class RecordFlowViewModel {
                 }
             }
             guard !Task.isCancelled else { return }
-            phase = .failed("Lost connection before the affirmation was ready. Check History.")
+            phase = .failed(APIError.lostConnection)
         } catch {
             guard !Task.isCancelled else { return }
             fail(error)
