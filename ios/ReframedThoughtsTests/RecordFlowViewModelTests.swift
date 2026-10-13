@@ -65,4 +65,22 @@ struct RecordFlowViewModelTests {
         await vm.record()
         #expect(vm.phase == .permissionDenied)
     }
+    @Test func streamEndingBeforeAnyEventFails() async {
+        let api = API.stub(createSession: { _ in .fixture() }, watchSession: { _ in Self.stream([]) })
+        let vm = RecordFlowViewModel(api: api, recorder: recording(), onUnauthenticated: {})
+        await vm.record(); await vm.stopAndSubmit()
+        #expect(vm.phase == .failed("Lost connection before the affirmation was ready. Check History."))
+    }
+    @Test func resetCancelsRunningFollow() async {
+        let cont = Captured<AsyncThrowingStream<Session, Error>.Continuation?>(nil)
+        let api = API.stub(watchSession: { _ in AsyncThrowingStream { cont.value = $0 } })
+        let vm = RecordFlowViewModel(api: api, recorder: recording(), onUnauthenticated: {})
+        let task = Task { await vm.resume(session: .fixture(status: .reframing)) }
+        while cont.value == nil { await Task.yield() }
+        vm.reset()
+        await task.value
+        cont.value?.yield(.fixture(status: .completed, reframedText: "late"))
+        await Task.yield()
+        #expect(vm.phase == .idle)
+    }
 }

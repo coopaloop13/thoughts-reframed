@@ -28,39 +28,53 @@ final class RecordFlowViewModel {
     }
 
     func record() async {
+        guard phase == .idle else { return }
         guard await recorder.requestPermission() == .granted else { phase = .permissionDenied; return }
         do { try recorder.start(); phase = .recording } catch { phase = .failed(error.localizedDescription) }
     }
 
     func stopAndSubmit() async {
+        guard phase == .recording else { return }
         guard let url = recorder.stop() else { phase = .failed("Recording failed."); return }
         phase = .uploading
         defer { try? FileManager.default.removeItem(at: url) }
         do {
             let session = try await api.createSession(url)
-            await follow(session.id)
+            await startFollowing(session.id)
         } catch { fail(error) }
     }
 
     func resume(session: Session) async {
         if session.status.isTerminal { phase = session.status == .completed ? .done(session) : .failed(Self.failureMessage(session.error)); return }
         phase = .processing(session.status)
-        await follow(session.id)
+        await startFollowing(session.id)
     }
 
     func reset() { watchTask?.cancel(); watchTask = nil; phase = .idle }
 
+    private func startFollowing(_ id: String) async {
+        watchTask?.cancel()
+        let t = Task { await self.follow(id) }
+        watchTask = t
+        await t.value
+    }
+
     private func follow(_ id: String) async {
         do {
             for try await s in api.watchSession(id) {
+                guard !Task.isCancelled else { return }
                 switch s.status {
                 case .completed: phase = .done(s); return
                 case .failed: phase = .failed(Self.failureMessage(s.error)); return
                 default: phase = .processing(s.status)
                 }
             }
-            if case .processing = phase { phase = .failed("Lost connection before the affirmation was ready. Check History.") }
-        } catch { fail(error) }
+            guard !Task.isCancelled else { return }
+            phase = .failed("Lost connection before the affirmation was ready. Check History.")
+        } catch {
+            guard !Task.isCancelled else { return }
+            fail(error)
+        }
     }
 
     private func fail(_ error: Error) {

@@ -8,6 +8,7 @@ final class AudioPlayer {
     private var observer: Any?
 
     func play(_ url: URL) {
+        if let observer { NotificationCenter.default.removeObserver(observer) }; observer = nil
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
         try? AVAudioSession.sharedInstance().setActive(true)
         let item = AVPlayerItem(url: url)
@@ -15,5 +16,8 @@ final class AudioPlayer {
         observer = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in Task { @MainActor in self?.isPlaying = false } }
         player?.play(); isPlaying = true
     }
-    func stop() { player?.pause(); isPlaying = false }
+    func stop() {
+        if let observer { NotificationCenter.default.removeObserver(observer) }; observer = nil
+        player?.pause(); isPlaying = false
+    }
 }
