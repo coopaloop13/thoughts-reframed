@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import ReframedThoughts
 
-@MainActor
+@MainActor @Suite(.serialized)
 struct AppStateTests {
     let store = TokenStore(service: "com.coopertech.reframedthoughts.appstate-tests")
 
