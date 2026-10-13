@@ -15,6 +15,5 @@ struct RootView: View {
     }
 }
 
-// Temporary placeholders; Tasks 6 and 8 replace them.
-struct EnrollVoiceView: View { var body: some View { Text("Enroll") } }
+// Temporary placeholders; Task 8 replaces it.
 struct MainTabView: View { var body: some View { Text("Main") } }
