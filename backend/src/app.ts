@@ -13,7 +13,6 @@ export function createApp(deps: Deps) {
   return createYoga<{}, Context>({
     schema,
     graphqlEndpoint: '/graphql',
-    maskedErrors: false,
     graphiql: { subscriptionsProtocol: 'WS' },
     context: ({ request }) => contextFromToken(deps, request.headers.get('authorization')?.replace(/^Bearer /i, '')),
   });
