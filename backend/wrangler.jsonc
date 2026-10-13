@@ -1,0 +1,9 @@
+{
+  "name": "reframed-thoughts",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-01-01",
+  "containers": [{ "class_name": "Backend", "image": "./Dockerfile", "max_instances": 1, "instance_type": "basic" }],
+  "durable_objects": { "bindings": [{ "name": "BACKEND", "class_name": "Backend" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Backend"] }],
+  "vars": { "OPENAI_MODEL": "gpt-5-mini", "APPLE_BUNDLE_ID": "ai.blocsmith.reframedthoughts", "R2_BUCKET": "reframed-thoughts" }
+}

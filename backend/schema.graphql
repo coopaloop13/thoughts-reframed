@@ -1,0 +1,49 @@
+type AuthPayload {
+  token: String
+  user: User
+}
+
+scalar DateTime
+
+scalar File
+
+type Mutation {
+  createSession(recording: File!): Session
+  deleteAccount: Boolean
+  enrollVoice(referenceText: String!, sample: File!): User
+  signInWithApple(identityToken: String!): AuthPayload
+}
+
+type Query {
+  me: User
+  session(id: ID!): Session
+  sessions(before: DateTime, limit: Int = 20): [Session!]
+}
+
+type Session {
+  audioUrl: String
+  createdAt: DateTime
+  error: String
+  id: ID
+  reframedText: String
+  status: SessionStatus
+  transcript: String
+}
+
+enum SessionStatus {
+  COMPLETED
+  FAILED
+  REFRAMING
+  SYNTHESIZING
+  TRANSCRIBING
+  UPLOADED
+}
+
+type Subscription {
+  sessionUpdated(id: ID!): Session
+}
+
+type User {
+  hasVoice: Boolean
+  id: ID
+}
