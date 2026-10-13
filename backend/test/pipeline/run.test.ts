@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { sessions, users, type SessionRow } from '../../src/db/schema.js';
 import { runPipeline, sweepStuckSessions } from '../../src/pipeline/run.js';
@@ -61,6 +61,27 @@ describe('runPipeline', () => {
     const s = await seed(deps, { status: 'COMPLETED', transcript: 't', reframedText: 'r', audioKey: 'a' });
     await runPipeline(deps, s.id);
     expect(fakes.r2.size).toBe(0);
+  });
+});
+
+describe('runPipeline hardening', () => {
+  it('never rejects when the db is down', async () => {
+    const { deps } = await makeTestDeps();
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const broken = { ...deps, db: { select() { throw new Error('db down'); } } as any };
+    await expect(runPipeline(broken, 'any-id')).resolves.toBeUndefined();
+    spy.mockRestore();
+  });
+  it('stops without side effects when the session is deleted mid-run', async () => {
+    const { deps, fakes } = await makeTestDeps();
+    fakes.r2.set('recordings/x.m4a', new Uint8Array([1]));
+    const s = await seed(deps);
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    deps.voice.transcribe = async () => { await deps.db.delete(sessions).where(eq(sessions.id, s.id)); return 't'; };
+    await expect(runPipeline(deps, s.id)).resolves.toBeUndefined();
+    expect([...fakes.r2.keys()].some((k) => k.startsWith('affirmations/'))).toBe(false);
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
 
