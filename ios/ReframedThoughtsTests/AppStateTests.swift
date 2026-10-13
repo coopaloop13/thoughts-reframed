@@ -58,4 +58,24 @@ struct AppStateTests {
         #expect(state.route == .signedOut)
         #expect(store.read() == nil)
     }
+    @Test func nonAuthErrorOnStartRoutesToFailedAndKeepsToken() async throws {
+        try store.write("t")
+        let state = AppState(tokenStore: store, makeAPI: { _ in .stub(me: { throw APIError.transport("offline") }) })
+        await state.start()
+        #expect(state.route == .failed("offline"))
+        #expect(store.read() == "t")
+    }
+    @Test func retryAfterFailedRecovers() async throws {
+        try store.write("t")
+        let calls = Captured(0)
+        let state = AppState(tokenStore: store, makeAPI: { _ in .stub(me: {
+            calls.value += 1
+            if calls.value == 1 { throw APIError.transport("offline") }
+            return User(id: "u", hasVoice: true)
+        }) })
+        await state.start()
+        #expect(state.route == .failed("offline"))
+        await state.start()
+        #expect(state.route == .main)
+    }
 }

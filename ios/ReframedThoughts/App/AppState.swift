@@ -3,11 +3,10 @@ import Observation
 
 @MainActor @Observable
 final class AppState {
-    enum Route: Equatable { case loading, signedOut, enroll, main }
+    enum Route: Equatable { case loading, signedOut, enroll, main, failed(String) }
     private(set) var route: Route = .loading
     private(set) var user: User?
     private(set) var api: API
-    var lastError: String?
 
     private let tokenStore: TokenStore
     private let makeAPI: (String?) -> API
@@ -22,8 +21,9 @@ final class AppState {
         guard let token = tokenStore.read() ?? devJWT else { route = .signedOut; return }
         api = makeAPI(token)
         do { routeFor(try await api.me()) } catch {
-            handle(error)
-            if route == .loading && !(error is CancellationError) { route = .signedOut }
+            if error is CancellationError { return }
+            if case APIError.unauthenticated = error { signOut(); return }
+            route = .failed((error as? APIError)?.userMessage ?? error.localizedDescription)
         }
     }
 
@@ -38,11 +38,9 @@ final class AppState {
 
     func signOut() { tokenStore.clear(); user = nil; api = makeAPI(nil); route = .signedOut }
 
-    /// Central error policy: UNAUTHENTICATED signs out; cancellation is ignored; everything else is surfaced.
+    /// UNAUTHENTICATED signs out; cancellation is ignored; other errors are the caller's to show.
     func handle(_ error: Error) {
-        if error is CancellationError { return }
-        if case APIError.unauthenticated = error { signOut(); return }
-        lastError = (error as? APIError)?.userMessage ?? error.localizedDescription
+        if case APIError.unauthenticated = error { signOut() }
     }
 
     private func routeFor(_ user: User) { self.user = user; route = user.hasVoice ? .main : .enroll }

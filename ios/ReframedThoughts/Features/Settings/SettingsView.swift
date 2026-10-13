@@ -23,6 +23,9 @@ struct SettingsView: View {
 
     private func deleteAccount() async {
         do { try await app.api.deleteAccount(); app.signOut() }
-        catch { self.error = (error as? APIError)?.userMessage ?? error.localizedDescription; app.handle(error) }
+        catch {
+            self.error = (error as? APIError)?.userMessage ?? error.localizedDescription
+            if case APIError.unauthenticated = error { app.signOut() }
+        }
     }
 }
