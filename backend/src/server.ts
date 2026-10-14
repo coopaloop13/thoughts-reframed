@@ -49,7 +49,7 @@ export function depsFromEnv() {
     db: createDb(env.DATABASE_URL),
     pubsub: createPubSub(),
     r2: createR2({ accountId: env.R2_ACCOUNT_ID, accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY, bucket: env.R2_BUCKET }),
-    voice: createVoiceStudio({ baseUrl: env.VOICESTUDIO_URL, apiKey: env.VOICESTUDIO_API_KEY }),
+    voice: createVoiceStudio({ baseUrl: env.VOICESTUDIO_URL, apiKey: env.VOICESTUDIO_API_KEY, timeoutMs: env.VOICESTUDIO_TIMEOUT_MS }),
     agent: createAgent(createOpenAILLM({ apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL })),
     jwtSecret: jwtSecretFrom(env.JWT_SECRET),
     appleJwks: appleJwks(),
@@ -65,9 +65,11 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { deps, env } = depsFromEnv();
   const { port } = await startServer(deps, env.PORT);
   console.log(`listening on :${port}`);
-  const sweep = () => Promise.all([sweepStuckSessions(deps), sweepStuckTurns(deps)])
+  // A job is only "stuck" once its slowest call could no longer be in flight; sweeping sooner re-runs a live synthesis.
+  const stuckAfter = env.VOICESTUDIO_TIMEOUT_MS + 60_000;
+  const sweep = () => Promise.all([sweepStuckSessions(deps, stuckAfter), sweepStuckTurns(deps, stuckAfter)])
     .then(([s, t]) => { if (s.length) console.log('resumed sessions', s); if (t.length) console.log('resumed turns', t); })
     .catch((e) => console.error('sweep failed', e));
   sweep();
-  setInterval(sweep, 120_000).unref();
+  setInterval(sweep, Math.min(stuckAfter, 120_000)).unref();
 }

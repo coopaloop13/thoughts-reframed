@@ -19,11 +19,12 @@ Safety:
 
 When the instructions ask for JSON, reply with a single JSON object in exactly that shape and nothing else.`;
 
-export const REFRAME_INSTRUCTIONS = `Task: rewrite the person's new thought as a first-person affirmation they could say to themselves.
-- One or two sentences, under 40 words, present tense, "I" statements.
+export const REFRAME_INSTRUCTIONS = `Task: rewrite the person's new thought as a first-person affirmation they could say to themselves, then end with one small, concrete action they can take today or tonight to work through it.
+- Two or three sentences, under 60 words, present tense, "I" statements. The action is the last sentence and says when: "Tonight I will…", "The next time I…".
+- The action must be specific and doable in a few minutes: one message to one person, one line written down, one question to ask, one thing to notice. Never "take small steps", "practice self-care" or other generalities.
 - Keep their subject matter. Realistic and kind. No exclamation marks.
-- If this thought repeats a pattern from your notes, let the affirmation quietly answer that pattern.
-- If the thought contains crisis language, do not write an affirmation. Instead write two or three caring sentences acknowledging what they said, telling them they deserve support right now, and encouraging them to contact a crisis line or someone they trust.
+- Prefer an action that tests the thought against reality (a CBT behavioral experiment) over one that only reflects on it: if they fear someone dislikes them, the action is a small contact with that person; if they fear failure, the action gathers one piece of evidence. If this thought repeats a pattern from your notes, let the affirmation quietly answer that pattern.
+- If the thought contains crisis language, do not write an affirmation or an action. Instead write two or three caring sentences acknowledging what they said, telling them they deserve support right now, and encouraging them to contact a crisis line or someone they trust.
 Reply with JSON: {"affirmation": string, "crisis": boolean}`;
 
 export const CHAT_INSTRUCTIONS = `Task: continue a short conversation that helps the person work through the thought below using CBT. Each reply is read aloud to them, so write for the ear: two to four short sentences, at most one question.

@@ -70,6 +70,7 @@ describe('runPipeline', () => {
   });
   it('marks FAILED with the error and publishes, without throwing', async () => {
     const { deps, fakes } = await makeTestDeps();
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
     fakes.r2.set('recordings/x.m4a', new Uint8Array([1]));
     fakes.agentFail = true;
     const s = await seed(deps);
@@ -81,6 +82,17 @@ describe('runPipeline', () => {
     expect(row.transcript).toBe('I always mess things up');
     await new Promise((r) => setTimeout(r, 0));
     expect(seen).toEqual(['TRANSCRIBING', 'REFRAMING', 'FAILED']);
+    quiet.mockRestore();
+  });
+  it('logs a failure with the session id and stage', async () => {
+    const { deps, fakes } = await makeTestDeps();
+    fakes.r2.set('recordings/x.m4a', new Uint8Array([1]));
+    fakes.voice.fail = 'synthesize';
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const s = await seed(deps);
+    await runPipeline(deps, s.id);
+    expect(spy).toHaveBeenCalledWith('session failed', s.id, 'SYNTHESIZING', expect.objectContaining({ message: 'voicestudio 500' }));
+    spy.mockRestore();
   });
   it('resumes from the first missing stage', async () => {
     const { deps, fakes } = await makeTestDeps();

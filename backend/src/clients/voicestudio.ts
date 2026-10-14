@@ -1,9 +1,16 @@
 import type { VoiceStudio } from '../deps.js';
 
-export function createVoiceStudio(cfg: { baseUrl: string; apiKey: string }): VoiceStudio {
+export function createVoiceStudio(cfg: { baseUrl: string; apiKey: string; timeoutMs?: number }): VoiceStudio {
   const call = async (method: string, path: string, init: RequestInit = {}, okStatuses: number[] = []) => {
-    const res = await fetch(cfg.baseUrl + path, { ...init, method, signal: AbortSignal.timeout(180_000), headers: { authorization: `Bearer ${cfg.apiKey}`, ...(init.headers ?? {}) } });
-    if (!res.ok && !okStatuses.includes(res.status)) throw new Error(`VoiceStudio ${method} ${path}: ${res.status}`);
+    let res: Response;
+    try {
+      res = await fetch(cfg.baseUrl + path, { ...init, method, signal: AbortSignal.timeout(cfg.timeoutMs ?? 180_000), headers: { authorization: `Bearer ${cfg.apiKey}`, ...(init.headers ?? {}) } });
+    } catch (err) {
+      // undici says only "fetch failed"; the reason (ECONNREFUSED, timeout) is in err.cause.
+      const cause = (err as { cause?: Error }).cause;
+      throw new Error(`VoiceStudio ${method} ${path}: ${cause?.message ?? (err as Error).message}`, { cause: err });
+    }
+    if (!res.ok && !okStatuses.includes(res.status)) throw new Error(`VoiceStudio ${method} ${path}: ${res.status} ${(await res.text()).slice(0, 300)}`.trimEnd());
     return res;
   };
   const audioForm = (field: string, audio: Uint8Array, extra: Record<string, string>) => {

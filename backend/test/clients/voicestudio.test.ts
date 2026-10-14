@@ -1,4 +1,4 @@
-import { HttpResponse, http } from 'msw';
+import { HttpResponse, delay, http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 import { createVoiceStudio } from '../../src/clients/voicestudio.js';
 import { msw } from '../setup.js';
@@ -35,9 +35,18 @@ describe('voicestudio client', () => {
     expect(await vs.synthesize({ text: 'I am learning', voice: 'ab12cd34' })).toEqual(new Uint8Array([7, 7]));
     expect(body).toMatchObject({ voice: 'ab12cd34', input: 'I am learning', response_format: 'mp3' });
   });
-  it('throws with status on failure', async () => {
+  it('throws with status and response body on failure', async () => {
     msw.use(http.post(`${base}/v1/audio/speech`, () => new HttpResponse('boom', { status: 500 })));
-    await expect(vs.synthesize({ text: 'x', voice: 'v' })).rejects.toThrow('VoiceStudio POST /v1/audio/speech: 500');
+    await expect(vs.synthesize({ text: 'x', voice: 'v' })).rejects.toThrow('VoiceStudio POST /v1/audio/speech: 500 boom');
+  });
+  it('names the request when the connection fails', async () => {
+    msw.use(http.post(`${base}/v1/audio/speech`, () => HttpResponse.error()));
+    await expect(vs.synthesize({ text: 'x', voice: 'v' })).rejects.toThrow(/^VoiceStudio POST \/v1\/audio\/speech: .+/);
+  });
+  it('times out after timeoutMs', async () => {
+    const quick = createVoiceStudio({ baseUrl: base, apiKey: 'KEY', timeoutMs: 50 });
+    msw.use(http.post(`${base}/v1/audio/speech`, async () => { await delay(500); return HttpResponse.arrayBuffer(new ArrayBuffer(1)); }));
+    await expect(quick.synthesize({ text: 'x', voice: 'v' })).rejects.toThrow(/VoiceStudio POST \/v1\/audio\/speech: .*(timeout|abort)/i);
   });
   it('passes a timeout signal to fetch', async () => {
     msw.use(http.delete(`${base}/profiles/p1`, () => new HttpResponse(null, { status: 200 })));

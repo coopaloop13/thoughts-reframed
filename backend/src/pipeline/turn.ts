@@ -27,32 +27,35 @@ export async function runTurn(deps: Deps, turnId: string): Promise<void> {
     if (!t || TERMINAL.includes(t.status)) return;
     const [s] = await deps.db.select().from(sessions).where(eq(sessions.id, t.sessionId));
     if (!s) throw new Error('session gone');
+    let stage: SessionStatus = t.status;
+    const go = (patch: Parameters<typeof transition>[2]) => { stage = patch.status; return transition(deps, turnId, patch); };
     try {
       let userText = t.userText;
       if (!userText) {
-        await transition(deps, turnId, { status: 'TRANSCRIBING' });
+        await go({ status: 'TRANSCRIBING' });
         userText = (await deps.voice.transcribe(await deps.r2.get(t.recordingKey))).trim();
         if (!userText) throw new Error('EMPTY_TRANSCRIPT');
       }
       let { agentText, crisis, closing } = t;
       if (!agentText) {
-        await transition(deps, turnId, { status: 'REFRAMING', userText });
+        await go({ status: 'REFRAMING', userText });
         const [ctx, prior] = await Promise.all([loadContext(deps.db, s.userId, { exclude: s.id }), priorTurns(deps, s.id, t.createdAt)]);
         const r = await deps.agent.chatTurn(ctx, { transcript: s.transcript ?? '', affirmation: s.reframedText ?? '' }, prior, userText);
         agentText = r.reply;
         crisis = r.crisis;
         closing = r.closing;
       }
-      await transition(deps, turnId, { status: 'SYNTHESIZING', userText, agentText, crisis, closing });
+      await go({ status: 'SYNTHESIZING', userText, agentText, crisis, closing });
       const [user] = await deps.db.select().from(users).where(eq(users.id, s.userId));
       if (!user?.voiceProfileId) throw new Error('VOICE_NOT_ENROLLED');
       const mp3 = await deps.voice.synthesize({ text: agentText, voice: user.voiceProfileId });
       const audioKey = `turns/${turnId}.mp3`;
       await deps.r2.put(audioKey, mp3, 'audio/mpeg');
-      await transition(deps, turnId, { status: 'COMPLETED', audioKey });
+      await go({ status: 'COMPLETED', audioKey });
       await refreshProfileQuietly(deps, s.userId, s.id);
     } catch (err) {
-      await transition(deps, turnId, { status: 'FAILED', error: err instanceof Error ? err.message : String(err) });
+      console.error('turn failed', turnId, stage, err);
+      await go({ status: 'FAILED', error: err instanceof Error ? err.message : String(err) });
     }
   } catch (err) {
     console.error('turn pipeline failed', turnId, err);

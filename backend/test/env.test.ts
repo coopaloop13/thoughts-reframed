@@ -8,8 +8,12 @@ const full = {
 };
 
 describe('loadEnv', () => {
-  it('returns all vars with PORT defaulting to 8080', () => {
-    expect(loadEnv(full)).toEqual({ ...full, PORT: 8080 });
+  it('returns all vars with PORT defaulting to 8080 and VOICESTUDIO_TIMEOUT_MS to 180000', () => {
+    expect(loadEnv(full)).toEqual({ ...full, PORT: 8080, VOICESTUDIO_TIMEOUT_MS: 180_000 });
+  });
+  it('overrides VOICESTUDIO_TIMEOUT_MS and rejects a non-number', () => {
+    expect(loadEnv({ ...full, VOICESTUDIO_TIMEOUT_MS: '600000' }).VOICESTUDIO_TIMEOUT_MS).toBe(600_000);
+    expect(() => loadEnv({ ...full, VOICESTUDIO_TIMEOUT_MS: 'soon' })).toThrow('Invalid VOICESTUDIO_TIMEOUT_MS: soon');
   });
   it('names the first missing var', () => {
     const { JWT_SECRET: _, ...missing } = full;

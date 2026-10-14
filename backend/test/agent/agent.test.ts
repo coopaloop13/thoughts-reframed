@@ -36,6 +36,14 @@ describe('renderContext', () => {
 });
 
 describe('agent.reframe', () => {
+  it('asks for one concrete, same-day action after the reframe', async () => {
+    const { llm, calls } = stubLLM('{"affirmation": "ok", "crisis": false}');
+    await createAgent(llm).reframe(empty, 'I always mess things up');
+    const c = calls[0].messages[0].content;
+    expect(c).toMatch(/end with one (small, )?concrete action/i);
+    expect(c).toMatch(/today or tonight/i);
+    expect(c).toMatch(/under 60 words/);
+  });
   it('sends system prompt, instructions, context and the thought in json mode; parses the result', async () => {
     const { llm, calls } = stubLLM('{"affirmation": "I am learning.", "crisis": false}');
     const r = await createAgent(llm).reframe(ctx, 'I always mess things up');

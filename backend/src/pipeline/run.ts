@@ -18,31 +18,34 @@ export async function runPipeline(deps: Deps, sessionId: string): Promise<void> 
   try {
     const [s] = await deps.db.select().from(sessions).where(eq(sessions.id, sessionId));
     if (!s || TERMINAL.includes(s.status)) return;
+    let stage: SessionStatus = s.status;
+    const go = (patch: Parameters<typeof transition>[2]) => { stage = patch.status; return transition(deps, sessionId, patch); };
     try {
       let transcript = s.transcript;
       if (!transcript) {
-        await transition(deps, sessionId, { status: 'TRANSCRIBING' });
+        await go({ status: 'TRANSCRIBING' });
         transcript = await deps.voice.transcribe(await deps.r2.get(s.recordingKey));
       }
       let reframedText = s.reframedText;
       let crisis = s.crisis;
       if (!reframedText) {
-        await transition(deps, sessionId, { status: 'REFRAMING', transcript });
+        await go({ status: 'REFRAMING', transcript });
         const ctx = await loadContext(deps.db, s.userId);
         const r = await deps.agent.reframe(ctx, transcript);
         reframedText = r.affirmation;
         crisis = r.crisis;
       }
-      await transition(deps, sessionId, { status: 'SYNTHESIZING', transcript, reframedText, crisis });
+      await go({ status: 'SYNTHESIZING', transcript, reframedText, crisis });
       const [user] = await deps.db.select().from(users).where(eq(users.id, s.userId));
       if (!user?.voiceProfileId) throw new Error('VOICE_NOT_ENROLLED');
       const mp3 = await deps.voice.synthesize({ text: reframedText, voice: user.voiceProfileId });
       const audioKey = `affirmations/${sessionId}.mp3`;
       await deps.r2.put(audioKey, mp3, 'audio/mpeg');
-      await transition(deps, sessionId, { status: 'COMPLETED', audioKey });
+      await go({ status: 'COMPLETED', audioKey });
       await refreshProfileQuietly(deps, s.userId, sessionId);
     } catch (err) {
-      await transition(deps, sessionId, { status: 'FAILED', error: err instanceof Error ? err.message : String(err) });
+      console.error('session failed', sessionId, stage, err);
+      await go({ status: 'FAILED', error: err instanceof Error ? err.message : String(err) });
     }
   } catch (err) {
     console.error('pipeline failed', sessionId, err);

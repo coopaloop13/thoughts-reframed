@@ -53,6 +53,7 @@ describe('runTurn', () => {
   });
   it('fails with EMPTY_TRANSCRIPT on silence', async () => {
     const { deps, fakes } = await makeTestDeps();
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
     fakes.r2.set('turns/x.m4a', new Uint8Array([1]));
     fakes.voice.transcript = '   ';
     const { t } = await seed(deps);
@@ -61,9 +62,11 @@ describe('runTurn', () => {
     expect(row.status).toBe('FAILED');
     expect(row.error).toBe('EMPTY_TRANSCRIPT');
     expect(fakes.agentCalls.chat).toEqual([]);
+    quiet.mockRestore();
   });
   it('marks FAILED when the agent throws, without throwing', async () => {
     const { deps, fakes } = await makeTestDeps();
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
     fakes.r2.set('turns/x.m4a', new Uint8Array([1]));
     fakes.agentFail = true;
     const { t } = await seed(deps);
@@ -74,6 +77,17 @@ describe('runTurn', () => {
     expect(row.error).toBe('llm 500');
     await new Promise((r) => setTimeout(r, 0));
     expect(seen).toEqual(['TRANSCRIBING', 'REFRAMING', 'FAILED']);
+    quiet.mockRestore();
+  });
+  it('logs a failure with the turn id and stage', async () => {
+    const { deps, fakes } = await makeTestDeps();
+    fakes.r2.set('turns/x.m4a', new Uint8Array([1]));
+    fakes.voice.fail = 'synthesize';
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { t } = await seed(deps);
+    await runTurn(deps, t.id);
+    expect(spy).toHaveBeenCalledWith('turn failed', t.id, 'SYNTHESIZING', expect.objectContaining({ message: 'voicestudio 500' }));
+    spy.mockRestore();
   });
   it('resumes from the first missing stage', async () => {
     const { deps, fakes } = await makeTestDeps();

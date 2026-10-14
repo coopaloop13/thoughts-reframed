@@ -11,7 +11,7 @@ GraphQL API for Reframed Thoughts. Node 22, ESM, TypeScript.
 - `npm run db:generate` — drizzle-kit generate migrations from `src/db/schema.ts`. `npm run db:migrate` — apply to `DATABASE_URL`.
 - `npm run schema:export` — writes `schema.graphql` (iOS Apollo codegen reads it). Run after any schema change.
 - `npm run voice:start` / `voice:stop` / `voice:status` — bring the RunPod VoiceStudio GPU pod up or down (it bills ~$0.59/hr while running; everything else scales to zero on its own). Needs `RUNPOD_API_KEY` and `RUNPOD_POD_ID` in `.env`.
-- Locally, `docker compose up` also builds `voicestudio/Dockerfile` (VoiceStudio v0.5.6, CPU only, data in the `voicestudio-data` volume, admin port on 127.0.0.1:3900). Leave `VOICESTUDIO_URL` empty in `.env` to use it. Containers can't use the Apple GPU, so synthesis is slow.
+- Locally, `docker compose up` also builds `voicestudio/Dockerfile` (VoiceStudio v0.5.6, CPU only, data in the `voicestudio-data` volume, admin port on 127.0.0.1:3900). Leave `VOICESTUDIO_URL` empty in `.env` to use it. Containers can't use the Apple GPU, so synthesis is slow. CPU synthesis peaks at ~7.5 GB and takes ~3.5 min per sentence: give Docker Desktop 16 GB (Settings → Resources) and set `VOICESTUDIO_TIMEOUT_MS=600000` in `.env` (default 180000; the stuck-job sweeper waits this plus 60s before re-running a job), otherwise the VM's OOM killer takes VoiceStudio down mid-synthesis (exit 137) and the session fails with `fetch failed`/`ECONNREFUSED`.
 - `npm run voice:local` — the fast alternative: VoiceStudio natively on this Mac (Apple GPU via MPS). One-time: clone `debpalash/VoiceStudio` v0.5.6 to `~/Development/VoiceStudio` and `uv sync --locked`; then set `VOICESTUDIO_URL=http://host.docker.internal:3900`.
 - `npx wrangler deploy` — builds the Dockerfile, pushes the image, deploys the Worker proxy.
 
@@ -25,6 +25,8 @@ GraphQL API for Reframed Thoughts. Node 22, ESM, TypeScript.
 ## Conventions
 - Stack: graphql-yoga 5, @pothos/core 4, graphql-ws 6 (`import ... from 'graphql-ws/use/ws'`), drizzle-orm, jose, aws4fetch.
 - Session status order: UPLOADED → TRANSCRIBING → REFRAMING → SYNTHESIZING → COMPLETED | FAILED. Every transition writes the row then publishes `session` on pubsub.
+- Failure logging: pipelines log `session failed <id> <stage> <err>` / `turn failed …` to stderr before marking FAILED (the DB `error` column keeps only the message); VoiceStudio client errors carry the response body or the network cause (`VoiceStudio POST /v1/audio/speech: 500 <body>`). `docker compose logs backend` is the first stop for a failed session.
+- Product decision (2026-10-14): the reframe is an affirmation plus one concrete same-day action in the last sentence (`REFRAME_INSTRUCTIONS`, under 60 words, spoken as one text). No separate action field yet; add one when follow-up tracking is wanted.
 - Errors to clients use `GraphQLError` with `extensions.code` ∈ UNAUTHENTICATED, INVALID_APPLE_TOKEN, VOICE_NOT_ENROLLED, NOT_FOUND, SESSION_NOT_READY, TURN_IN_PROGRESS.
 - Turns reuse SessionStatus; REFRAMING means "agent is thinking". A turn FAILS with EMPTY_TRANSCRIPT on silence.
 - Env vars: see `.env.example`. Production secrets: `wrangler secret put <NAME>`; the Worker passes them to the container as `envVars`.
