@@ -45,6 +45,7 @@ enum SessionStatus {
 
 type Subscription {
   sessionUpdated(id: ID!): Session!
+  turnUpdated(id: ID!): Turn!
 }
 
 type Turn {

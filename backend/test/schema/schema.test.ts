@@ -6,4 +6,6 @@ it('fields are non-null by default', () => {
   expect(String(schema.getQueryType()!.getFields().me.type)).toBe('User!');
   expect(String(schema.getSubscriptionType()!.getFields().sessionUpdated.type)).toBe('Session!');
   expect(String(schema.getQueryType()!.getFields().session.type)).toBe('Session');
+  expect(String(schema.getMutationType()!.getFields().sendTurn.type)).toBe('Turn!');
+  expect(String(schema.getSubscriptionType()!.getFields().turnUpdated.type)).toBe('Turn!');
 });

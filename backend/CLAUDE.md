@@ -17,12 +17,14 @@ GraphQL API for Reframed Thoughts. Node 22, ESM, TypeScript.
 - `src/server.ts` boot: env → db → clients → yoga + graphql-ws → sweeper → listen.
 - `src/app.ts` `createApp(deps)` returns the Yoga instance. `Deps` is the only seam; tests pass fakes.
 - `src/schema/` Pothos types and resolvers. `src/pipeline/` transcribe → reframe → synthesize. `src/clients/` r2, voicestudio, openai. `src/auth/` Apple token verify, our JWT. `src/db/` drizzle schema + `drizzle/` migrations.
+- `src/agent/` therapist agent: `llm.ts` provider seam, `agent.ts` (reframe / chatTurn / updateProfile), `context.ts` (profile + recent sessions), `prompts.ts`, `crisis.ts` keyword floor. `src/pipeline/turn.ts` chat turns, `src/pipeline/profile.ts` profile refresh.
 - `worker/index.ts` Cloudflare Worker: `getContainer(env.BACKEND).fetch(request)`.
 
 ## Conventions
 - Stack: graphql-yoga 5, @pothos/core 4, graphql-ws 6 (`import ... from 'graphql-ws/use/ws'`), drizzle-orm, jose, aws4fetch.
 - Session status order: UPLOADED → TRANSCRIBING → REFRAMING → SYNTHESIZING → COMPLETED | FAILED. Every transition writes the row then publishes `session` on pubsub.
-- Errors to clients use `GraphQLError` with `extensions.code` ∈ UNAUTHENTICATED, INVALID_APPLE_TOKEN, VOICE_NOT_ENROLLED, NOT_FOUND.
+- Errors to clients use `GraphQLError` with `extensions.code` ∈ UNAUTHENTICATED, INVALID_APPLE_TOKEN, VOICE_NOT_ENROLLED, NOT_FOUND, SESSION_NOT_READY, TURN_IN_PROGRESS.
+- Turns reuse SessionStatus; REFRAMING means "agent is thinking". A turn FAILS with EMPTY_TRANSCRIPT on silence.
 - Env vars: see `.env.example`. Production secrets: `wrangler secret put <NAME>`; the Worker passes them to the container as `envVars`.
 
 ## External services (one-time setup)

@@ -59,8 +59,29 @@ try {
       complete: () => reject(new Error('subscription ended without a terminal status')),
     });
   });
-  if (final.status === 'COMPLETED' && final.audioUrl) code = 0;
-  else console.error('smoke FAILED, final row:', final);
+  if (final.status !== 'COMPLETED' || !final.audioUrl) { console.error('smoke FAILED, final row:', final); throw new Error('session did not complete'); }
+
+  console.log('sending a chat turn…');
+  const { sendTurn } = await upload('mutation($id:ID!,$r:File!){ sendTurn(sessionId:$id, recording:$r){ id } }', 'r', { id: createSession.id });
+  const turn = await new Promise<any>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timed out waiting for the turn')), TIMEOUT_MS);
+    timer.unref();
+    client.subscribe({
+      query: 'subscription($id:ID!){ turnUpdated(id:$id){ status userText agentText audioUrl crisis closing error } }',
+      variables: { id: sendTurn.id },
+    }, {
+      next: ({ data }: any) => { console.log(data.turnUpdated); if (['COMPLETED', 'FAILED'].includes(data.turnUpdated.status)) resolve(data.turnUpdated); },
+      error: reject,
+      complete: () => reject(new Error('turn subscription ended without a terminal status')),
+    });
+  });
+  if (turn.status !== 'COMPLETED' || !turn.audioUrl) { console.error('smoke FAILED, turn:', turn); throw new Error('turn did not complete'); }
+
+  const meRes = await fetch(`${url}/graphql`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ query: '{ me { profile } }' }) });
+  const me = (await meRes.json() as any).data?.me;
+  console.log('profile:', me?.profile);
+  if (!me?.profile) throw new Error('profile was not written');
+  code = 0;
 
   const res = await fetch(`${url}/graphql`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ query: 'mutation{ deleteAccount }' }) });
   const del = await res.json().catch(() => ({})) as any;
