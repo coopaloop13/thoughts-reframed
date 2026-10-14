@@ -2020,12 +2020,16 @@ In `ios/ReframedThoughts/Features/Record/PlaybackView.swift`:
 
 Both `RecordView` and `SessionDetailView` already wrap `PlaybackView` in a `NavigationStack`, so the destination resolves in both.
 
-- [ ] **Step 4: Build and run the whole iOS suite**
+- [ ] **Step 4: Update ios/CLAUDE.md**
+
+Under **Layout** change the Features line to `ReframedThoughts/Features/{Auth,Enroll,Record,Chat,History,Settings}/` and add: `` `Chat/` — `ChatView` + `ChatViewModel` (spoken follow-up turns via `sendTurn` / `watchTurn`), `CrisisCard` (988 / 741741, shown whenever `session.crisis` or any `turn.crisis`). `` Under **Conventions** add: `Turns reuse SessionStatus; label REFRAMING as "Thinking…" in chat (`SessionStatus.chatLabel`). The crisis card is never dismissable within a session.`
+
+- [ ] **Step 5: Build and run the whole iOS suite**
 
 Run: `cd ios && xcodegen generate && xcodebuild test -project ReframedThoughts.xcodeproj -scheme ReframedThoughts -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' -quiet CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-`
 Expected: build succeeds, all tests PASS (ThemeTests confirms no new colour names were needed).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add ios/ReframedThoughts
