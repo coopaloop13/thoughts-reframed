@@ -1,8 +1,25 @@
-# Local backend: same image as production, env from backend/.env.
+# Local stack: the backend (same image as production) plus a CPU VoiceStudio. Env from backend/.env.
+# Leave VOICESTUDIO_URL empty in .env to use the Compose'd VoiceStudio; set it to override
+# (http://host.docker.internal:3900 for `npm run voice:local`, the RunPod URL for the real thing).
 services:
   backend:
     build: .
     env_file: .env
+    environment:
+      VOICESTUDIO_URL: ${VOICESTUDIO_URL:-http://voicestudio:3900}
     ports:
       - "8080:8080"
+    depends_on:
+      - voicestudio
     restart: unless-stopped
+  voicestudio:
+    build: voicestudio
+    environment:
+      OMNIVOICE_API_KEY: ${VOICESTUDIO_API_KEY:?set VOICESTUDIO_API_KEY in backend/.env}
+    ports:
+      - "127.0.0.1:3900:3900"
+    volumes:
+      - voicestudio-data:/app/omnivoice_data
+    restart: unless-stopped
+volumes:
+  voicestudio-data:

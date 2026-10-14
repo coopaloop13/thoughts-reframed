@@ -11,7 +11,8 @@ GraphQL API for Reframed Thoughts. Node 22, ESM, TypeScript.
 - `npm run db:generate` — drizzle-kit generate migrations from `src/db/schema.ts`. `npm run db:migrate` — apply to `DATABASE_URL`.
 - `npm run schema:export` — writes `schema.graphql` (iOS Apollo codegen reads it). Run after any schema change.
 - `npm run voice:start` / `voice:stop` / `voice:status` — bring the RunPod VoiceStudio GPU pod up or down (it bills ~$0.59/hr while running; everything else scales to zero on its own). Needs `RUNPOD_API_KEY` and `RUNPOD_POD_ID` in `.env`.
-- `npm run voice:local` — run VoiceStudio natively on this Mac instead (Apple GPU via MPS, no RunPod). One-time: clone `debpalash/VoiceStudio` v0.5.6 to `~/Development/VoiceStudio` and `uv sync --locked`; then point `VOICESTUDIO_URL` at `http://host.docker.internal:3900`. Docker can't use the Apple GPU, which is why this runs outside Compose.
+- Locally, `docker compose up` also builds `voicestudio/Dockerfile` (VoiceStudio v0.5.6, CPU only, data in the `voicestudio-data` volume, admin port on 127.0.0.1:3900). Leave `VOICESTUDIO_URL` empty in `.env` to use it. Containers can't use the Apple GPU, so synthesis is slow.
+- `npm run voice:local` — the fast alternative: VoiceStudio natively on this Mac (Apple GPU via MPS). One-time: clone `debpalash/VoiceStudio` v0.5.6 to `~/Development/VoiceStudio` and `uv sync --locked`; then set `VOICESTUDIO_URL=http://host.docker.internal:3900`.
 - `npx wrangler deploy` — builds the Dockerfile, pushes the image, deploys the Worker proxy.
 
 ## Layout
