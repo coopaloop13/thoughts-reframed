@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { sessions } from '../../src/db/schema.js';
+import { sessions, turns } from '../../src/db/schema.js';
 import { makeTestDeps, signIn } from '../helpers/app.js';
 
 const SUB = (id: string) => `subscription { sessionUpdated(id:"${id}") { id status reframedText } }`;
@@ -82,5 +82,39 @@ describe('sessionUpdated', () => {
     const { yoga } = await makeTestDeps();
     const sse = await openSse(yoga, SUB('00000000-0000-0000-0000-000000000000'), '');
     expect((await sse.next()).errors[0].extensions.code).toBe('UNAUTHENTICATED');
+  });
+});
+
+const TSUB = (id: string) => `subscription { turnUpdated(id:"${id}") { id status agentText } }`;
+const tev = (id: string, status: string, agentText: string | null = null) => ({ data: { turnUpdated: { id, status, agentText } } });
+
+async function setupTurn() {
+  const { yoga, apple, deps } = await makeTestDeps();
+  const { token, user } = await signIn(yoga, apple);
+  const [s] = await deps.db.insert(sessions).values({ userId: user.id, recordingKey: 'r', status: 'COMPLETED' }).returning();
+  const [row] = await deps.db.insert(turns).values({ sessionId: s.id, recordingKey: 'k' }).returning();
+  const update = async (set: Partial<typeof turns.$inferInsert>) => {
+    const [u] = await deps.db.update(turns).set(set).where(eq(turns.id, row.id)).returning();
+    deps.pubsub.publish('turn', row.id, u);
+  };
+  return { yoga, apple, deps, token, row, update };
+}
+
+describe('turnUpdated', () => {
+  it('sends the snapshot, streams updates, ends on terminal', async () => {
+    const { yoga, token, row, update } = await setupTurn();
+    const sse = await openSse(yoga, TSUB(row.id), token);
+    expect(await sse.next()).toEqual(tev(row.id, 'UPLOADED'));
+    await update({ status: 'REFRAMING' });
+    expect(await sse.next()).toEqual(tev(row.id, 'REFRAMING'));
+    await update({ status: 'COMPLETED', agentText: 'done' });
+    expect(await sse.next()).toEqual(tev(row.id, 'COMPLETED', 'done'));
+    expect(await sse.next()).toBeNull();
+  });
+  it('errors NOT_FOUND for someone else’s turn', async () => {
+    const { yoga, apple, row } = await setupTurn();
+    const other = await signIn(yoga, apple, 'other');
+    const sse = await openSse(yoga, TSUB(row.id), other.token);
+    expect((await sse.next()).errors[0].extensions.code).toBe('NOT_FOUND');
   });
 });

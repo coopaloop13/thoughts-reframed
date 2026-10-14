@@ -1,6 +1,7 @@
 import { builder } from './builder.js';
 import { gqlError, requireUser } from './errors.js';
 import { SessionType, loadOwnedSession } from './session.js';
+import { TurnType, loadOwnedTurn } from './turn.js';
 
 const done = (r: { status: string }) => r.status === 'COMPLETED' || r.status === 'FAILED';
 
@@ -16,6 +17,30 @@ builder.subscriptionField('sessionUpdated', (t) => t.field({
     try {
       const row = await loadOwnedSession(ctx, userId, String(id));
       if (!row) throw gqlError('NOT_FOUND', 'Session not found');
+      yield row;
+      if (done(row)) return;
+      for (let r = await pending; !r.done; r = await it.next()) {
+        yield r.value;
+        if (done(r.value)) return;
+      }
+    } finally {
+      await it.return?.();
+    }
+  },
+  resolve: (payload) => payload,
+}));
+
+builder.subscriptionField('turnUpdated', (t) => t.field({
+  type: TurnType,
+  args: { id: t.arg.id({ required: true }) },
+  subscribe: async function* (_r, { id }, ctx) {
+    const userId = requireUser(ctx);
+    const it = ctx.deps.pubsub.subscribe('turn', String(id))[Symbol.asyncIterator]();
+    const pending = it.next();
+    pending.catch(() => {});
+    try {
+      const row = await loadOwnedTurn(ctx, userId, String(id));
+      if (!row) throw gqlError('NOT_FOUND', 'Turn not found');
       yield row;
       if (done(row)) return;
       for (let r = await pending; !r.done; r = await it.next()) {
