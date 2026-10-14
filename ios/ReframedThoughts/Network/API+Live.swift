@@ -18,7 +18,7 @@ extension API {
                 try await mapped {
                     let r = try await client.fetch(query: GQL.MeQuery(), cachePolicy: .networkOnly)
                     let u = try unwrap(r).me
-                    return User(id: u.id, hasVoice: u.hasVoice)
+                    return User(id: u.id, hasVoice: u.hasVoice, profile: u.profile)
                 }
             },
             enrollVoice: { url, text in
@@ -78,6 +78,33 @@ extension API {
                     guard let url = URL(string: raw) else { throw APIError.server("Bad preview URL") }
                     return url
                 }
+            },
+            sendTurn: { sessionId, url in
+                try await mapped {
+                    let file = try GraphQLFile(fieldName: "recording", originalName: "turn.m4a", mimeType: "audio/mp4", fileURL: url)
+                    let r = try await client.upload(operation: GQL.SendTurnMutation(sessionId: sessionId, recording: "recording"), files: [file])
+                    return Turn(try unwrap(r).sendTurn.fragments.turnFields)
+                }
+            },
+            watchTurn: { id in
+                AsyncThrowingStream { continuation in
+                    let task = Task {
+                        do {
+                            let stream = try client.subscribe(subscription: GQL.TurnUpdatedSubscription(id: id), cachePolicy: .networkOnly)
+                            for try await r in stream {
+                                let t = Turn(try unwrap(r).turnUpdated.fragments.turnFields)
+                                continuation.yield(t)
+                                if t.status.isTerminal { break }
+                            }
+                            continuation.finish()
+                        } catch {
+                            let e = mapError(error)
+                            continuation.finish(throwing: (e as? APIError) == .transport(APIError.networkUnavailable)
+                                                ? APIError.transport(APIError.lostConnection) : e)
+                        }
+                    }
+                    continuation.onTermination = { _ in task.cancel() }
+                }
             }
         )
     }
@@ -112,6 +139,16 @@ extension Session {
         self.init(id: f.id, status: SessionStatus(rawValue: f.status.rawValue) ?? .failed,
                   transcript: f.transcript, reframedText: f.reframedText,
                   audioUrl: f.audioUrl.flatMap(URL.init(string:)), error: f.error,
-                  createdAt: Session.parseDate(f.createdAt) ?? .distantPast)
+                  createdAt: Session.parseDate(f.createdAt) ?? .distantPast,
+                  crisis: f.crisis, turns: f.turns.map { Turn($0.fragments.turnFields) })
+    }
+}
+
+extension Turn {
+    init(_ f: GQL.TurnFields) {
+        self.init(id: f.id, status: SessionStatus(rawValue: f.status.rawValue) ?? .failed,
+                  userText: f.userText, agentText: f.agentText,
+                  audioUrl: f.audioUrl.flatMap(URL.init(string:)), crisis: f.crisis, closing: f.closing,
+                  error: f.error, createdAt: Session.parseDate(f.createdAt) ?? .distantPast)
     }
 }

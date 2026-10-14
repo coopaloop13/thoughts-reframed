@@ -10,7 +10,7 @@ extension GQL {
     static let operationDocument: ApolloAPI.OperationDocument = .init(
       definition: .init(
         #"subscription SessionUpdated($id: ID!) { sessionUpdated(id: $id) { __typename ...SessionFields } }"#,
-        fragments: [SessionFields.self]
+        fragments: [SessionFields.self, TurnFields.self]
       ))
 
     public var id: ID
@@ -57,6 +57,8 @@ extension GQL {
         var audioUrl: String? { __data["audioUrl"] }
         var error: String? { __data["error"] }
         var createdAt: GQL.DateTime { __data["createdAt"] }
+        var crisis: Bool { __data["crisis"] }
+        var turns: [Turn] { __data["turns"] }
 
         struct Fragments: FragmentContainer {
           let __data: DataDict
@@ -64,6 +66,8 @@ extension GQL {
 
           var sessionFields: SessionFields { _toFragment() }
         }
+
+        typealias Turn = SessionFields.Turn
       }
     }
   }

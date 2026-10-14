@@ -10,4 +10,6 @@ struct API {
     var watchSession: @Sendable (String) -> AsyncThrowingStream<Session, Error>
     var deleteAccount: @Sendable () async throws -> Void
     var previewVoice: @Sendable () async throws -> URL
+    var sendTurn: @Sendable (String, URL) async throws -> Turn
+    var watchTurn: @Sendable (String) -> AsyncThrowingStream<Turn, Error>
 }

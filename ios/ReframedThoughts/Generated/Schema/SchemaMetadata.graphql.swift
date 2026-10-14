@@ -33,6 +33,7 @@ extension GQL {
       "Query": GQL.Objects.Query,
       "Session": GQL.Objects.Session,
       "Subscription": GQL.Objects.Subscription,
+      "Turn": GQL.Objects.Turn,
       "User": GQL.Objects.User
     ]
 

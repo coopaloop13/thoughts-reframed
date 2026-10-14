@@ -9,7 +9,7 @@ extension GQL {
     static let operationName: String = "Me"
     static let operationDocument: ApolloAPI.OperationDocument = .init(
       definition: .init(
-        #"query Me { me { __typename id hasVoice } }"#
+        #"query Me { me { __typename id hasVoice profile } }"#
       ))
 
     public init() {}
@@ -38,6 +38,7 @@ extension GQL {
           .field("__typename", String.self),
           .field("id", GQL.ID.self),
           .field("hasVoice", Bool.self),
+          .field("profile", String?.self),
         ] }
         static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
           MeQuery.Data.Me.self
@@ -45,6 +46,7 @@ extension GQL {
 
         var id: GQL.ID { __data["id"] }
         var hasVoice: Bool { __data["hasVoice"] }
+        var profile: String? { __data["profile"] }
       }
     }
   }

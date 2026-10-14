@@ -1,7 +1,10 @@
-fragment SessionFields on Session {
-  id status transcript reframedText audioUrl error createdAt
+fragment TurnFields on Turn {
+  id status userText agentText audioUrl crisis closing error createdAt
 }
-query Me { me { id hasVoice } }
+fragment SessionFields on Session {
+  id status transcript reframedText audioUrl error createdAt crisis turns { ...TurnFields }
+}
+query Me { me { id hasVoice profile } }
 query Sessions($limit: Int, $before: DateTime) { sessions(limit: $limit, before: $before) { ...SessionFields } }
 query Session($id: ID!) { session(id: $id) { ...SessionFields } }
 mutation SignInWithApple($identityToken: String!) { signInWithApple(identityToken: $identityToken) { token user { id hasVoice } } }
@@ -10,3 +13,5 @@ mutation CreateSession($recording: File!) { createSession(recording: $recording)
 mutation DeleteAccount { deleteAccount }
 subscription SessionUpdated($id: ID!) { sessionUpdated(id: $id) { ...SessionFields } }
 mutation PreviewVoice { previewVoice }
+mutation SendTurn($sessionId: ID!, $recording: File!) { sendTurn(sessionId: $sessionId, recording: $recording) { ...TurnFields } }
+subscription TurnUpdated($id: ID!) { turnUpdated(id: $id) { ...TurnFields } }
