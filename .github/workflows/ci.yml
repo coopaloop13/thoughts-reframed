@@ -40,6 +40,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: brew install xcodegen
+      # Local.xcconfig is gitignored; xcodebuild needs the referenced file to exist, empty is fine.
+      - run: touch Local.xcconfig
       - run: xcodegen generate
       - run: >
           xcodebuild test -project ReframedThoughts.xcodeproj -scheme ReframedThoughts
