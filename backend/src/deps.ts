@@ -1,7 +1,7 @@
 import type { PubSub } from 'graphql-yoga';
 import type { JWTVerifyGetKey } from 'jose';
 import type { Db } from './db/client.js';
-import type { SessionRow } from './db/schema.js';
+import type { SessionRow, TurnRow } from './db/schema.js';
 
 export type R2 = {
   put(key: string, body: Uint8Array, contentType: string): Promise<void>;
@@ -15,7 +15,7 @@ export type VoiceStudio = {
   transcribe(audio: Uint8Array): Promise<string>;
   synthesize(a: { text: string; voice: string }): Promise<Uint8Array>;
 };
-export type SessionPubSub = PubSub<{ session: [id: string, payload: SessionRow] }>;
+export type SessionPubSub = PubSub<{ session: [id: string, payload: SessionRow]; turn: [id: string, payload: TurnRow] }>;
 
 export type Deps = {
   db: Db;

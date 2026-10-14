@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const SESSION_STATUSES = ['UPLOADED', 'TRANSCRIBING', 'REFRAMING', 'SYNTHESIZING', 'COMPLETED', 'FAILED'] as const;
 export type SessionStatus = (typeof SESSION_STATUSES)[number];
@@ -9,6 +9,8 @@ export const users = pgTable('users', {
   appleSub: text('apple_sub').notNull().unique(),
   voiceProfileId: text('voice_profile_id'),
   voiceSampleKey: text('voice_sample_key'),
+  profile: text('profile'),
+  profileUpdatedAt: timestamp('profile_updated_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -21,9 +23,26 @@ export const sessions = pgTable('sessions', {
   reframedText: text('reframed_text'),
   audioKey: text('audio_key'),
   error: text('error'),
+  crisis: boolean('crisis').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const turns = pgTable('turns', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: uuid('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
+  status: sessionStatus('status').notNull().default('UPLOADED'),
+  recordingKey: text('recording_key').notNull(),
+  userText: text('user_text'),
+  agentText: text('agent_text'),
+  audioKey: text('audio_key'),
+  crisis: boolean('crisis').notNull().default(false),
+  closing: boolean('closing').notNull().default(false),
+  error: text('error'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export type UserRow = typeof users.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;
+export type TurnRow = typeof turns.$inferSelect;
