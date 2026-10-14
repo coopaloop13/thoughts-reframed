@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createAgent } from '../../src/agent/agent.js';
+import { CRISIS_FALLBACK, createAgent } from '../../src/agent/agent.js';
 import { renderContext, type AgentContext, type ContextSession } from '../../src/agent/context.js';
 import type { LLMRequest } from '../../src/agent/llm.js';
 import { CHAT_INSTRUCTIONS, PROFILE_INSTRUCTIONS, REFRAME_INSTRUCTIONS, THERAPIST_SYSTEM } from '../../src/agent/prompts.js';
@@ -60,6 +60,14 @@ describe('agent.reframe', () => {
     const bad = stubLLM('not json at all');
     await expect(createAgent(bad.llm).reframe(empty, 'x')).rejects.toThrow('agent: bad reply');
   });
+  it('model crisis flag alone (no keyword in the input) sets crisis', async () => {
+    const { llm } = stubLLM('{"affirmation": "ok", "crisis": true}');
+    expect((await createAgent(llm).reframe(empty, 'I always mess things up')).crisis).toBe(true);
+  });
+  it('crisis input with a malformed reply returns the fixed crisis fallback', async () => {
+    const { llm } = stubLLM('garbage');
+    expect(await createAgent(llm).reframe(empty, 'I want to kill myself')).toEqual({ affirmation: CRISIS_FALLBACK, crisis: true });
+  });
 });
 
 describe('agent.chatTurn', () => {
@@ -82,6 +90,20 @@ describe('agent.chatTurn', () => {
     const r = await createAgent(llm).chatTurn(empty, { transcript: 't', affirmation: 'a' }, [], 'I want to end my life');
     expect(r.crisis).toBe(true);
     expect(r.closing).toBe(false);
+  });
+  it('model crisis flag alone (no keyword in the input) sets crisis and forces closing false', async () => {
+    const { llm } = stubLLM('{"reply": "ok", "crisis": true, "closing": false}');
+    const r = await createAgent(llm).chatTurn(empty, { transcript: 't', affirmation: 'a' }, [], 'I feel low today');
+    expect(r).toEqual({ reply: 'ok', crisis: true, closing: false });
+  });
+  it('crisis input with a malformed reply returns the fixed crisis fallback', async () => {
+    const { llm } = stubLLM('garbage');
+    const r = await createAgent(llm).chatTurn(empty, { transcript: 't', affirmation: 'a' }, [], 'I want to end my life');
+    expect(r).toEqual({ reply: CRISIS_FALLBACK, crisis: true, closing: false });
+  });
+  it('non-crisis input with a malformed reply still throws', async () => {
+    const { llm } = stubLLM('garbage');
+    await expect(createAgent(llm).chatTurn(empty, { transcript: 't', affirmation: 'a' }, [], 'I am tired')).rejects.toThrow('agent: bad reply');
   });
 });
 

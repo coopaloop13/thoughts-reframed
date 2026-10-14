@@ -26,19 +26,36 @@ const str = (o: Record<string, unknown>, k: string): string => {
 };
 const bool = (o: Record<string, unknown>, k: string): boolean => o[k] === true;
 
+export const CRISIS_FALLBACK = "Thank you for telling me. What you're carrying sounds very heavy, and you deserve support right now. Please reach out to a crisis line or someone you trust.";
+
 export function createAgent(llm: LLM): Agent {
   const ask = (content: string, json = true) => llm({ system: THERAPIST_SYSTEM, messages: [{ role: 'user', content }], ...(json ? { json } : {}) });
   return {
     async reframe(ctx, transcript) {
-      const o = parseJson(await ask(`${REFRAME_INSTRUCTIONS}\n\n${renderContext(ctx)}\n\nNew thought:\n"""${transcript}"""`));
-      return { affirmation: str(o, 'affirmation'), crisis: hasCrisisLanguage(transcript) || bool(o, 'crisis') };
+      const raw = await ask(`${REFRAME_INSTRUCTIONS}\n\n${renderContext(ctx)}\n\nNew thought:\n"""${transcript}"""`);
+      const crisis = hasCrisisLanguage(transcript);
+      try {
+        const o = parseJson(raw);
+        return { affirmation: str(o, 'affirmation'), crisis: crisis || bool(o, 'crisis') };
+      } catch (e) {
+        // Crisis keyword trumps a malformed reply: the crisis signal must not be lost.
+        if (crisis) return { affirmation: CRISIS_FALLBACK, crisis: true };
+        throw e;
+      }
     },
     async chatTurn(ctx, session, prior, userText) {
       const convo = prior.flatMap((t) => [`Person: ${t.userText}`, `You: ${t.agentText}`]).join('\n');
       const content = `${CHAT_INSTRUCTIONS}\n\n${renderContext(ctx)}\n\nThis session:\nThought: "${session.transcript}"\nAffirmation: "${session.affirmation}"\n\nConversation so far:\n${convo || '(none yet)'}\n\nPerson (latest): ${userText}`;
-      const o = parseJson(await ask(content));
-      const crisis = hasCrisisLanguage(userText) || bool(o, 'crisis');
-      return { reply: str(o, 'reply'), crisis, closing: !crisis && bool(o, 'closing') };
+      const raw = await ask(content);
+      const crisis = hasCrisisLanguage(userText);
+      try {
+        const o = parseJson(raw);
+        const c = crisis || bool(o, 'crisis');
+        return { reply: str(o, 'reply'), crisis: c, closing: !c && bool(o, 'closing') };
+      } catch (e) {
+        if (crisis) return { reply: CRISIS_FALLBACK, crisis: true, closing: false };
+        throw e;
+      }
     },
     async updateProfile(ctx, session) {
       const content = `${PROFILE_INSTRUCTIONS}\n\nOld notes:\n${ctx.profile?.trim() || '(none)'}\n\nSession just finished:\n${renderSession(session)}`;
