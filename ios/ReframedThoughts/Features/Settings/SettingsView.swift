@@ -8,7 +8,10 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section { NavigationLink("Re-record my voice") { RerecordVoiceView() } }
+                Section {
+                    NavigationLink("What Reframed remembers about me") { ProfileView() }
+                    NavigationLink("Re-record my voice") { RerecordVoiceView() }
+                }
                 Section { Button("Sign out") { app.signOut() } }
                 Section {
                     Button("Delete account", role: .destructive) { confirmDelete = true }
