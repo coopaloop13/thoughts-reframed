@@ -5,6 +5,8 @@ struct PlaybackView: View {
     var onDone: (() -> Void)? = nil
     @State private var player = AudioPlayer()
     @State private var showChat = false
+    @State private var turns: [Turn] = []
+    @State private var hasAutoPlayed = false
 
     var body: some View {
         ScrollView {
@@ -27,23 +29,27 @@ struct PlaybackView: View {
                         Text(t).italic().foregroundStyle(Color.muted)
                     }.frame(maxWidth: .infinity, alignment: .leading)
                 }
-                if !session.turns.isEmpty {
+                if !turns.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Worked through").font(.caption.weight(.semibold)).foregroundStyle(Color.muted).textCase(.uppercase)
-                        ForEach(session.turns) { t in
+                        ForEach(turns) { t in
                             if let u = t.userText { Text(u).italic().foregroundStyle(Color.muted) }
                             if let a = t.agentText { Text(a) }
                         }
                     }.frame(maxWidth: .infinity, alignment: .leading).card()
                 }
-                Button(session.turns.isEmpty ? "Work through this" : "Continue") { showChat = true }.buttonStyle(SecondaryButtonStyle())
+                Button(turns.isEmpty ? "Work through this" : "Continue") { showChat = true }.buttonStyle(SecondaryButtonStyle())
                 if let onDone { Button("New thought", action: onDone).buttonStyle(PrimaryButtonStyle()) }
             }
             .padding(Theme.spacing)
         }
         .background(Color.sand.ignoresSafeArea())
-        .navigationDestination(isPresented: $showChat) { ChatView(session: session) }
-        .onAppear { if let url = session.audioUrl { player.play(url) } }
+        .navigationDestination(isPresented: $showChat) { ChatView(session: { var s = session; s.turns = turns; return s }(), onTurnsChanged: { turns = $0 }) }
+        .onAppear {
+            if turns.isEmpty { turns = session.turns }
+            if !hasAutoPlayed, let url = session.audioUrl { player.play(url) }
+            hasAutoPlayed = true
+        }
         .onDisappear { player.stop() }
     }
 }

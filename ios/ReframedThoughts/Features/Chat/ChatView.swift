@@ -4,6 +4,7 @@ import UIKit
 struct ChatView: View {
     @Environment(AppState.self) private var app
     let session: Session
+    var onTurnsChanged: (([Turn]) -> Void)? = nil
     @State private var recorder = AudioRecorder()
     @State private var player = AudioPlayer()
     @State private var vm: ChatViewModel?
@@ -43,7 +44,7 @@ struct ChatView: View {
                         Color.clear.frame(height: 1).id("bottom")
                     }.padding(Theme.spacing)
                 }
-                .onChange(of: vm.turns) { withAnimation { proxy.scrollTo("bottom") } }
+                .onChange(of: vm.turns) { onTurnsChanged?(vm.turns); withAnimation { proxy.scrollTo("bottom") } }
             }
             controls(vm)
         }
@@ -57,7 +58,7 @@ struct ChatView: View {
     private func agentBubble(_ text: String, audio: URL?) -> some View {
         HStack(alignment: .top, spacing: 8) {
             bubble(text, mine: false)
-            if let audio { Button { player.isPlaying ? player.stop() : player.play(audio) } label: { Image(systemName: player.isPlaying ? "stop.circle" : "play.circle").font(.title2) }.tint(.forest) }
+            if let audio { Button { player.isPlaying ? player.stop() : player.play(audio) } label: { Image(systemName: player.isPlaying ? "stop.circle" : "play.circle").font(.title2) }.tint(.forest).accessibilityLabel(player.isPlaying ? "Stop reply" : "Play reply") }
         }
     }
 
@@ -66,10 +67,10 @@ struct ChatView: View {
             switch vm.phase {
             case .idle where vm.isClosed: EmptyView()
             case .idle:
-                Button { Task { await vm.record() } } label: { Image(systemName: "mic.fill") }.buttonStyle(RecordButtonStyle())
+                Button { Task { await vm.record() } } label: { Image(systemName: "mic.fill") }.buttonStyle(RecordButtonStyle()).accessibilityLabel("Reply by voice")
                 Text("Tap to reply").font(.footnote).foregroundStyle(Color.muted)
             case .recording:
-                Button { Task { await vm.stopAndSend() } } label: { Image(systemName: "stop.fill") }.buttonStyle(RecordButtonStyle(active: true))
+                Button { Task { await vm.stopAndSend() } } label: { Image(systemName: "stop.fill") }.buttonStyle(RecordButtonStyle(active: true)).accessibilityLabel("Stop and send")
                 Text(String(format: "%.0f s · tap when you're done", recorder.duration)).font(.footnote).foregroundStyle(Color.muted)
             case .sending: ProgressView().tint(.forest); Text(SessionStatus.uploaded.chatLabel).font(.footnote).foregroundStyle(Color.muted)
             case .processing(let s): ProgressView().tint(.forest); Text(s.chatLabel).font(.footnote).foregroundStyle(Color.muted)
