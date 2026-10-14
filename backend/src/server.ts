@@ -6,7 +6,8 @@ import { WebSocketServer } from 'ws';
 import { contextFromToken, createApp } from './app.js';
 import { appleJwks } from './auth/apple.js';
 import { jwtSecretFrom } from './auth/jwt.js';
-import { createReframer } from './clients/openai.js';
+import { createAgent } from './agent/agent.js';
+import { createOpenAILLM } from './clients/openai.js';
 import { createR2 } from './clients/r2.js';
 import { createVoiceStudio } from './clients/voicestudio.js';
 import { createDb } from './db/client.js';
@@ -48,7 +49,7 @@ export function depsFromEnv() {
     pubsub: createPubSub(),
     r2: createR2({ accountId: env.R2_ACCOUNT_ID, accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY, bucket: env.R2_BUCKET }),
     voice: createVoiceStudio({ baseUrl: env.VOICESTUDIO_URL, apiKey: env.VOICESTUDIO_API_KEY }),
-    reframe: createReframer({ apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL }),
+    agent: createAgent(createOpenAILLM({ apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL })),
     jwtSecret: jwtSecretFrom(env.JWT_SECRET),
     appleJwks: appleJwks(),
     appleAudience: env.APPLE_BUNDLE_ID,

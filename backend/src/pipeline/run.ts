@@ -1,6 +1,8 @@
 import { and, eq, lt, notInArray } from 'drizzle-orm';
+import { loadContext } from '../agent/context.js';
 import { sessions, users, type SessionRow, type SessionStatus } from '../db/schema.js';
 import type { Deps } from '../deps.js';
+import { refreshProfileQuietly } from './profile.js';
 
 const TERMINAL: SessionStatus[] = ['COMPLETED', 'FAILED'];
 
@@ -23,17 +25,22 @@ export async function runPipeline(deps: Deps, sessionId: string): Promise<void> 
         transcript = await deps.voice.transcribe(await deps.r2.get(s.recordingKey));
       }
       let reframedText = s.reframedText;
+      let crisis = s.crisis;
       if (!reframedText) {
         await transition(deps, sessionId, { status: 'REFRAMING', transcript });
-        reframedText = await deps.reframe(transcript);
+        const ctx = await loadContext(deps.db, s.userId);
+        const r = await deps.agent.reframe(ctx, transcript);
+        reframedText = r.affirmation;
+        crisis = r.crisis;
       }
-      await transition(deps, sessionId, { status: 'SYNTHESIZING', transcript, reframedText });
+      await transition(deps, sessionId, { status: 'SYNTHESIZING', transcript, reframedText, crisis });
       const [user] = await deps.db.select().from(users).where(eq(users.id, s.userId));
       if (!user?.voiceProfileId) throw new Error('VOICE_NOT_ENROLLED');
       const mp3 = await deps.voice.synthesize({ text: reframedText, voice: user.voiceProfileId });
       const audioKey = `affirmations/${sessionId}.mp3`;
       await deps.r2.put(audioKey, mp3, 'audio/mpeg');
       await transition(deps, sessionId, { status: 'COMPLETED', audioKey });
+      await refreshProfileQuietly(deps, s.userId, sessionId);
     } catch (err) {
       await transition(deps, sessionId, { status: 'FAILED', error: err instanceof Error ? err.message : String(err) });
     }

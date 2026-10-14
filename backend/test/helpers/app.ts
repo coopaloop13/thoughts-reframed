@@ -3,6 +3,7 @@ import type { YogaServerInstance } from 'graphql-yoga';
 import { createApp } from '../../src/app.js';
 import { jwtSecretFrom } from '../../src/auth/jwt.js';
 import type { Deps } from '../../src/deps.js';
+import type { AgentContext, ContextSession, ContextTurn } from '../../src/agent/context.js';
 import { makeAppleSigner } from './apple.js';
 import { makeTestDb } from './db.js';
 
@@ -10,7 +11,8 @@ export async function makeTestDeps() {
   const apple = await makeAppleSigner();
   const r2 = new Map<string, Uint8Array>();
   const voice = { profiles: new Map<string, string>(), transcript: 'I always mess things up', synthesized: new Uint8Array([1, 2, 3]), lastSynthesize: undefined as undefined | { text: string; voice: string }, fail: undefined as undefined | 'transcribe' | 'synthesize' | 'createProfile' | 'deleteProfile' };
-  const fakes = { r2, voice, reframeFail: false, r2DeleteFail: false };
+  const agentCalls = { reframe: [] as AgentContext[], chat: [] as { prior: ContextTurn[]; userText: string }[], profile: [] as ContextSession[] };
+  const fakes = { r2, voice, agentFail: false, profileFail: false, crisis: false, closing: false, agentCalls, r2DeleteFail: false };
   let profileSeq = 0;
   const started: string[] = [];
   const deps: Deps = {
@@ -32,7 +34,11 @@ export async function makeTestDeps() {
       synthesize: async (a) => { if (voice.fail === 'synthesize') throw new Error('voicestudio 500'); voice.lastSynthesize = a; return voice.synthesized; },
     },
     startPipeline: (id) => { started.push(id); },
-    reframe: async (t) => { if (fakes.reframeFail) throw new Error('openai 500'); return `Reframed: ${t}`; },
+    agent: {
+      reframe: async (ctx, t) => { agentCalls.reframe.push(ctx); if (fakes.agentFail) throw new Error('llm 500'); return { affirmation: `Reframed: ${t}`, crisis: fakes.crisis }; },
+      chatTurn: async (_ctx, _s, prior, userText) => { agentCalls.chat.push({ prior, userText }); if (fakes.agentFail) throw new Error('llm 500'); return { reply: `Reply: ${userText}`, crisis: fakes.crisis, closing: fakes.closing }; },
+      updateProfile: async (_ctx, s) => { agentCalls.profile.push(s); if (fakes.profileFail) throw new Error('llm 500'); return `Notes after: ${s.transcript}`; },
+    },
   };
   return { deps, apple, fakes, started, yoga: createApp(deps) };
 }

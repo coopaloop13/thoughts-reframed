@@ -1,5 +1,6 @@
 import type { PubSub } from 'graphql-yoga';
 import type { JWTVerifyGetKey } from 'jose';
+import type { Agent } from './agent/agent.js';
 import type { Db } from './db/client.js';
 import type { SessionRow, TurnRow } from './db/schema.js';
 
@@ -22,7 +23,7 @@ export type Deps = {
   pubsub: SessionPubSub;
   r2: R2;
   voice: VoiceStudio;
-  reframe: (transcript: string) => Promise<string>;
+  agent: Agent;
   jwtSecret: Uint8Array;
   appleJwks: JWTVerifyGetKey;
   appleAudience: string;

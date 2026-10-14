@@ -17,6 +17,42 @@ const statusesSeen = (deps: Awaited<ReturnType<typeof makeTestDeps>>['deps'], id
 };
 
 describe('runPipeline', () => {
+  it('passes the user context to the agent and stores the crisis flag', async () => {
+    const { deps, fakes } = await makeTestDeps();
+    fakes.r2.set('recordings/x.m4a', new Uint8Array([1]));
+    fakes.crisis = true;
+    const s = await seed(deps);
+    await deps.db.update(users).set({ profile: 'old notes' }).where(eq(users.id, s.userId));
+    await runPipeline(deps, s.id);
+    const [row] = await deps.db.select().from(sessions).where(eq(sessions.id, s.id));
+    expect(row.status).toBe('COMPLETED');
+    expect(row.crisis).toBe(true);
+    expect(fakes.agentCalls.reframe[0].profile).toBe('old notes');
+  });
+  it('refreshes the profile after completing', async () => {
+    const { deps, fakes } = await makeTestDeps();
+    fakes.r2.set('recordings/x.m4a', new Uint8Array([1]));
+    const s = await seed(deps);
+    await runPipeline(deps, s.id);
+    const [u] = await deps.db.select().from(users).where(eq(users.id, s.userId));
+    expect(u.profile).toBe('Notes after: I always mess things up');
+    expect(u.profileUpdatedAt).toBeInstanceOf(Date);
+    expect(fakes.agentCalls.profile[0].affirmation).toBe('Reframed: I always mess things up');
+  });
+  it('keeps the session COMPLETED when the profile refresh fails', async () => {
+    const { deps, fakes } = await makeTestDeps();
+    fakes.r2.set('recordings/x.m4a', new Uint8Array([1]));
+    fakes.profileFail = true;
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const s = await seed(deps);
+    await runPipeline(deps, s.id);
+    const [row] = await deps.db.select().from(sessions).where(eq(sessions.id, s.id));
+    expect(row.status).toBe('COMPLETED');
+    const [u] = await deps.db.select().from(users).where(eq(users.id, s.userId));
+    expect(u.profile).toBeNull();
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
   it('runs all stages, stores mp3, publishes each transition', async () => {
     const { deps, fakes } = await makeTestDeps();
     fakes.r2.set('recordings/x.m4a', new Uint8Array([1]));
@@ -35,13 +71,13 @@ describe('runPipeline', () => {
   it('marks FAILED with the error and publishes, without throwing', async () => {
     const { deps, fakes } = await makeTestDeps();
     fakes.r2.set('recordings/x.m4a', new Uint8Array([1]));
-    fakes.reframeFail = true;
+    fakes.agentFail = true;
     const s = await seed(deps);
     const seen = statusesSeen(deps, s.id);
     await expect(runPipeline(deps, s.id)).resolves.toBeUndefined();
     const [row] = await deps.db.select().from(sessions).where(eq(sessions.id, s.id));
     expect(row.status).toBe('FAILED');
-    expect(row.error).toBe('openai 500');
+    expect(row.error).toBe('llm 500');
     expect(row.transcript).toBe('I always mess things up');
     await new Promise((r) => setTimeout(r, 0));
     expect(seen).toEqual(['TRANSCRIBING', 'REFRAMING', 'FAILED']);
