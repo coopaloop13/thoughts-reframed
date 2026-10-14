@@ -21,6 +21,7 @@
     "voice:start": "scripts/voice-pod.sh start",
     "voice:stop": "scripts/voice-pod.sh stop",
     "voice:status": "scripts/voice-pod.sh status",
+    "voice:local": "scripts/voice-local.sh",
     "dev:down": "docker compose down",
     "dev:logs": "docker compose logs -f backend"
   },
