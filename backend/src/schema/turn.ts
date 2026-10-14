@@ -42,6 +42,7 @@ builder.mutationField('sendTurn', (t) => t.field({
     const session = await loadOwnedSession(ctx, userId, String(sessionId));
     if (!session) throw gqlError('NOT_FOUND', 'Session not found');
     if (session.status !== 'COMPLETED') throw gqlError('SESSION_NOT_READY', 'Wait for the affirmation before chatting');
+    // ponytail: check-then-insert race if two sendTurn calls land at once; add a partial unique index on turns(session_id) where status not in (COMPLETED, FAILED) if it ever happens.
     const [inFlight] = await ctx.deps.db.select({ id: turns.id }).from(turns)
       .where(and(eq(turns.sessionId, session.id), notInArray(turns.status, ['COMPLETED', 'FAILED']))).limit(1);
     if (inFlight) throw gqlError('TURN_IN_PROGRESS', 'The previous reply is still on its way');
