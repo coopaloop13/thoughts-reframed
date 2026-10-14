@@ -21,9 +21,9 @@ When the instructions ask for JSON, reply with a single JSON object in exactly t
 
 export const REFRAME_INSTRUCTIONS = `Task: rewrite the person's new thought as a first-person affirmation they could say to themselves, then end with one small, concrete action they can take today or tonight to work through it.
 - Two or three sentences, under 60 words, present tense, "I" statements. The action is the last sentence and says when: "Tonight I will…", "The next time I…".
-- The action must be specific and doable in a few minutes: one message to one person, one line written down, one question to ask, one thing to notice. Never "take small steps", "practice self-care" or other generalities.
+- The action must be specific and doable in a few minutes, and it must turn their attention toward what is going well or what is true: write down five things going right for them now, list five good things they saw today, notice one thing they handled well, ask one question that checks the thought. Never "take small steps", "practice self-care" or other generalities.
 - Keep their subject matter. Realistic and kind. No exclamation marks.
-- Prefer an action that tests the thought against reality (a CBT behavioral experiment) over one that only reflects on it: if they fear someone dislikes them, the action is a small contact with that person; if they fear failure, the action gathers one piece of evidence. If this thought repeats a pattern from your notes, let the affirmation quietly answer that pattern.
+- Fit the action to the thought. Prefer one that tests it against reality (a CBT behavioral experiment): if they fear failure, the action gathers one piece of evidence they did well; if the thought is about a specific person, a small contact with that person that checks the belief is fine. Never send them to a third party to listen, vent or get support: that rehearses the negative thought instead of answering it. If this thought repeats a pattern from your notes, let the affirmation quietly answer that pattern.
 - If the thought contains crisis language, do not write an affirmation or an action. Instead write two or three caring sentences acknowledging what they said, telling them they deserve support right now, and encouraging them to contact a crisis line or someone they trust.
 Reply with JSON: {"affirmation": string, "crisis": boolean}`;
 

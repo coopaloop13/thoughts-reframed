@@ -44,6 +44,14 @@ describe('agent.reframe', () => {
     expect(c).toMatch(/today or tonight/i);
     expect(c).toMatch(/under 60 words/);
   });
+  it('steers the action toward positive evidence and never toward finding someone to listen', async () => {
+    const { llm, calls } = stubLLM('{"affirmation": "ok", "crisis": false}');
+    await createAgent(llm).reframe(empty, 'I always mess things up');
+    const c = calls[0].messages[0].content;
+    expect(c).toMatch(/positive|going well/i);
+    expect(c).toMatch(/never .*(listen|vent|support)/i);
+    expect(c).not.toMatch(/one message to one person/);
+  });
   it('sends system prompt, instructions, context and the thought in json mode; parses the result', async () => {
     const { llm, calls } = stubLLM('{"affirmation": "I am learning.", "crisis": false}');
     const r = await createAgent(llm).reframe(ctx, 'I always mess things up');
