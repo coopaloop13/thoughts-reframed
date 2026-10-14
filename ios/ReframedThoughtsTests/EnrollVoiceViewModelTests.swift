@@ -18,6 +18,24 @@ struct EnrollVoiceViewModelTests {
         await vm.record(); vm.stop()
         #expect(vm.phase == .failed("Please read the whole paragraph (at least 8 seconds)."))
     }
+    @Test func tooLongRecordingIsRejected() async {
+        let vm = EnrollVoiceViewModel(api: .stub(), recorder: recording(duration: 21))
+        await vm.record(); vm.stop()
+        #expect(vm.phase == .failed("Please keep it under 20 seconds and read at a natural pace."))
+    }
+    @Test func autoStopSavesTakeForReview() async throws {
+        let vm = EnrollVoiceViewModel(api: .stub(), recorder: recording(duration: 12), autoStopAfter: 0.05)
+        await vm.record()
+        #expect(vm.phase == .recording)
+        try await Task.sleep(for: .milliseconds(300))
+        guard case .review = vm.phase else { Issue.record("expected review, got \(vm.phase)"); return }
+    }
+    @Test func retakeCancelsAutoStop() async throws {
+        let vm = EnrollVoiceViewModel(api: .stub(), recorder: recording(duration: 12), autoStopAfter: 0.05)
+        await vm.record(); vm.stop(); vm.retake()
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(vm.phase == .idle)
+    }
     @Test func uploadsAndReportsUser() async {
         let uploaded = Captured<(URL, String)?>(nil)
         let api = API.stub(enrollVoice: { url, text in uploaded.value = (url, text); return User(id: "u", hasVoice: true) })

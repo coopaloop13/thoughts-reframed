@@ -39,9 +39,10 @@ struct EnrollVoiceView: View {
         switch vm.phase {
         case .idle: Button("Start recording") { Task { await vm.record() } }.buttonStyle(PrimaryButtonStyle())
         case .recording:
-            Text(String(format: "%.0f s", recorder.duration)).font(.display(40)).monospacedDigit()
+            Text("\(Int(max(0, EnrollVoiceViewModel.maximumSeconds - recorder.duration).rounded(.up))) s").font(.display(40)).monospacedDigit()
             Button { vm.stop() } label: { Image(systemName: "stop.fill") }.buttonStyle(RecordButtonStyle(active: true))
-            Text("Tap to stop when you've finished the paragraph.").font(.footnote).foregroundStyle(Color.muted)
+            Text("Tap to stop when you've finished the paragraph. Recording stops by itself at zero.").font(.footnote).foregroundStyle(Color.muted)
+                .multilineTextAlignment(.center)
         case .review:
             Button("Use this recording") { Task { await vm.upload() } }.buttonStyle(PrimaryButtonStyle())
             Button("Record again") { vm.retake() }.buttonStyle(SecondaryButtonStyle())
