@@ -14,6 +14,7 @@ import { createDb } from './db/client.js';
 import type { Deps } from './deps.js';
 import { loadEnv } from './env.js';
 import { createPipelineStarter, sweepStuckSessions } from './pipeline/run.js';
+import { createTurnStarter, sweepStuckTurns } from './pipeline/turn.js';
 
 export async function startServer(deps: Deps, port: number) {
   const yoga = createApp(deps);
@@ -54,8 +55,9 @@ export function depsFromEnv() {
     appleJwks: appleJwks(),
     appleAudience: env.APPLE_BUNDLE_ID,
   };
-  const deps = { ...base, startPipeline: () => {}, startTurn: () => {} } as Deps; // startTurn wired in the turn-pipeline task
+  const deps = { ...base, startPipeline: () => {}, startTurn: () => {} } as Deps;
   deps.startPipeline = createPipelineStarter(deps);
+  deps.startTurn = createTurnStarter(deps);
   return { deps, env };
 }
 
@@ -63,6 +65,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { deps, env } = depsFromEnv();
   const { port } = await startServer(deps, env.PORT);
   console.log(`listening on :${port}`);
-  sweepStuckSessions(deps).then((ids) => ids.length && console.log('resumed sessions', ids)).catch((e) => console.error('sweep failed', e));
-  setInterval(() => sweepStuckSessions(deps).catch((e) => console.error('sweep failed', e)), 120_000).unref();
+  const sweep = () => Promise.all([sweepStuckSessions(deps), sweepStuckTurns(deps)])
+    .then(([s, t]) => { if (s.length) console.log('resumed sessions', s); if (t.length) console.log('resumed turns', t); })
+    .catch((e) => console.error('sweep failed', e));
+  sweep();
+  setInterval(sweep, 120_000).unref();
 }
