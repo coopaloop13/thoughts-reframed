@@ -61,7 +61,7 @@ type Subscription { turnUpdated(id: ID!): Turn! }
 ## Section 4 — Pipelines
 
 - `run.ts` reframe step: load context → `agent.reframe` → store `reframedText` + `crisis`. After COMPLETED, fire-and-forget `agent.updateProfile` and write `users.profile`.
-- `turn.ts` — `runTurn(deps, turnId)`: TRANSCRIBING (VoiceStudio) → REFRAMING (`agent.chatTurn` with the session's transcript/affirmation + prior completed turns) → SYNTHESIZING (user's clone) → COMPLETED; publishes `turn` on pubsub. After COMPLETED, fire-and-forget profile update. `transition` is parametrized by table so both runners share it. Sweeper covers turns too.
+- `turn.ts` — `runTurn(deps, turnId)`: TRANSCRIBING (VoiceStudio) → REFRAMING (`agent.chatTurn` with the session's transcript/affirmation + prior completed turns) → SYNTHESIZING (user's clone) → COMPLETED; publishes `turn` on pubsub. After COMPLETED, fire-and-forget profile update. `transition` is duplicated in `turn.ts` (10 lines) rather than made generic over two Drizzle tables. Sweeper covers turns too.
 - ponytail: profile updates are last-writer-wins; turns in one session are sequential so this is fine. Add a per-user lock if concurrent sessions appear.
 
 ## Section 5 — iOS
