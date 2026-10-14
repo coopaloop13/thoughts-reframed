@@ -18,7 +18,7 @@
 - Session/turn status order: `UPLOADED → TRANSCRIBING → REFRAMING → SYNTHESIZING → COMPLETED | FAILED`. Every transition writes the row then publishes on pubsub.
 - Secrets never enter the repo. No new env vars are needed (the OpenAI adapter reuses `OPENAI_API_KEY`, `OPENAI_MODEL`).
 - iOS: Views never import Apollo; they use `API` and plain models. Any `UNAUTHENTICATED` error → `AppState.signOut()`. Theme colours only (`Color.forest`, `.sand`, `.surface`, `.muted`, `.clay`), fonts via `Font.display(_:)`, `.card()`, `PrimaryButtonStyle` / `SecondaryButtonStyle` / `RecordButtonStyle`. Never raw hex or `.blue`.
-- Every commit message ends with the line `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
+- Every commit message ends with a `Co-Authored-By: Claude <model> <noreply@anthropic.com>` line naming the model that made the commit (the commit blocks below show Fable 5.1 as the example; substitute your own model name).
 - Hotline copy is US only for now: call 988, text HOME to 741741.
 - Run backend commands from `backend/`, iOS commands from `ios/`.
 
