@@ -11,6 +11,8 @@ const session: ContextSession = {
 const ctx: AgentContext = { profile: 'Tends to catastrophize about work.', recent: [session] };
 const empty: AgentContext = { profile: null, recent: [] };
 
+const throwingLLM = async (): Promise<string> => { throw new Error('OpenAI: 500'); };
+
 function stubLLM(reply: string) {
   const calls: LLMRequest[] = [];
   const llm = async (req: LLMRequest) => { calls.push(req); return reply; };
@@ -68,6 +70,12 @@ describe('agent.reframe', () => {
     const { llm } = stubLLM('garbage');
     expect(await createAgent(llm).reframe(empty, 'I want to kill myself')).toEqual({ affirmation: CRISIS_FALLBACK, crisis: true });
   });
+  it('crisis input with a failing LLM call returns the fixed crisis fallback', async () => {
+    expect(await createAgent(throwingLLM).reframe(empty, 'I want to kill myself')).toEqual({ affirmation: CRISIS_FALLBACK, crisis: true });
+  });
+  it('non-crisis input with a failing LLM call still rejects', async () => {
+    await expect(createAgent(throwingLLM).reframe(empty, 'I am tired')).rejects.toThrow('OpenAI: 500');
+  });
 });
 
 describe('agent.chatTurn', () => {
@@ -100,6 +108,13 @@ describe('agent.chatTurn', () => {
     const { llm } = stubLLM('garbage');
     const r = await createAgent(llm).chatTurn(empty, { transcript: 't', affirmation: 'a' }, [], 'I want to end my life');
     expect(r).toEqual({ reply: CRISIS_FALLBACK, crisis: true, closing: false });
+  });
+  it('crisis input with a failing LLM call returns the fixed crisis fallback', async () => {
+    const r = await createAgent(throwingLLM).chatTurn(empty, { transcript: 't', affirmation: 'a' }, [], 'I want to end my life');
+    expect(r).toEqual({ reply: CRISIS_FALLBACK, crisis: true, closing: false });
+  });
+  it('non-crisis input with a failing LLM call still rejects', async () => {
+    await expect(createAgent(throwingLLM).chatTurn(empty, { transcript: 't', affirmation: 'a' }, [], 'I am tired')).rejects.toThrow('OpenAI: 500');
   });
   it('non-crisis input with a malformed reply still throws', async () => {
     const { llm } = stubLLM('garbage');

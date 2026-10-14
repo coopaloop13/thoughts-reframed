@@ -32,13 +32,13 @@ export function createAgent(llm: LLM): Agent {
   const ask = (content: string, json = true) => llm({ system: THERAPIST_SYSTEM, messages: [{ role: 'user', content }], ...(json ? { json } : {}) });
   return {
     async reframe(ctx, transcript) {
-      const raw = await ask(`${REFRAME_INSTRUCTIONS}\n\n${renderContext(ctx)}\n\nNew thought:\n"""${transcript}"""`);
       const crisis = hasCrisisLanguage(transcript);
       try {
+        const raw = await ask(`${REFRAME_INSTRUCTIONS}\n\n${renderContext(ctx)}\n\nNew thought:\n"""${transcript}"""`);
         const o = parseJson(raw);
         return { affirmation: str(o, 'affirmation'), crisis: crisis || bool(o, 'crisis') };
       } catch (e) {
-        // Crisis keyword trumps a malformed reply: the crisis signal must not be lost.
+        // Crisis keyword trumps an LLM failure or malformed reply: the crisis signal must not be lost.
         if (crisis) return { affirmation: CRISIS_FALLBACK, crisis: true };
         throw e;
       }
@@ -46,9 +46,9 @@ export function createAgent(llm: LLM): Agent {
     async chatTurn(ctx, session, prior, userText) {
       const convo = prior.flatMap((t) => [`Person: ${t.userText}`, `You: ${t.agentText}`]).join('\n');
       const content = `${CHAT_INSTRUCTIONS}\n\n${renderContext(ctx)}\n\nThis session:\nThought: "${session.transcript}"\nAffirmation: "${session.affirmation}"\n\nConversation so far:\n${convo || '(none yet)'}\n\nPerson (latest): ${userText}`;
-      const raw = await ask(content);
       const crisis = hasCrisisLanguage(userText);
       try {
+        const raw = await ask(content);
         const o = parseJson(raw);
         const c = crisis || bool(o, 'crisis');
         return { reply: str(o, 'reply'), crisis: c, closing: !c && bool(o, 'closing') };
