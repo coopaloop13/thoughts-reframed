@@ -28,4 +28,5 @@ export type Deps = {
   appleJwks: JWTVerifyGetKey;
   appleAudience: string;
   startPipeline: (sessionId: string) => void;
+  startTurn: (turnId: string) => void;
 };

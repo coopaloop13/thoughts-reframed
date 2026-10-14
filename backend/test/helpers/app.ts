@@ -15,6 +15,7 @@ export async function makeTestDeps() {
   const fakes = { r2, voice, agentFail: false, profileFail: false, crisis: false, closing: false, agentCalls, r2DeleteFail: false };
   let profileSeq = 0;
   const started: string[] = [];
+  const startedTurns: string[] = [];
   const deps: Deps = {
     db: await makeTestDb(),
     pubsub: createPubSub(),
@@ -34,13 +35,14 @@ export async function makeTestDeps() {
       synthesize: async (a) => { if (voice.fail === 'synthesize') throw new Error('voicestudio 500'); voice.lastSynthesize = a; return voice.synthesized; },
     },
     startPipeline: (id) => { started.push(id); },
+    startTurn: (id) => { startedTurns.push(id); },
     agent: {
       reframe: async (ctx, t) => { agentCalls.reframe.push(ctx); if (fakes.agentFail) throw new Error('llm 500'); return { affirmation: `Reframed: ${t}`, crisis: fakes.crisis }; },
       chatTurn: async (_ctx, _s, prior, userText) => { agentCalls.chat.push({ prior, userText }); if (fakes.agentFail) throw new Error('llm 500'); return { reply: `Reply: ${userText}`, crisis: fakes.crisis, closing: fakes.closing }; },
       updateProfile: async (_ctx, s) => { agentCalls.profile.push(s); if (fakes.profileFail) throw new Error('llm 500'); return `Notes after: ${s.transcript}`; },
     },
   };
-  return { deps, apple, fakes, started, yoga: createApp(deps) };
+  return { deps, apple, fakes, started, startedTurns, yoga: createApp(deps) };
 }
 
 export async function gql(yoga: YogaServerInstance<any, any>, body: { query: string; variables?: Record<string, unknown> }, token?: string) {

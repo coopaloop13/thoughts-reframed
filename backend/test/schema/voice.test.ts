@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { sessions, users } from '../../src/db/schema.js';
+import { sessions, turns, users } from '../../src/db/schema.js';
 import { gql, makeTestDeps, signIn } from '../helpers/app.js';
 import { gqlUpload } from '../helpers/upload.js';
 
@@ -59,6 +59,18 @@ describe('enrollVoice', () => {
 });
 
 describe('deleteAccount', () => {
+  it('removes turn recordings and reply audio from R2', async () => {
+    const { yoga, apple, deps, fakes } = await makeTestDeps();
+    const { token, user } = await signIn(yoga, apple);
+    await gqlUpload(yoga, { query: ENROLL, variables: { t: 'a' }, file: sample }, token);
+    const [s] = await deps.db.insert(sessions).values({ userId: user.id, recordingKey: 'recordings/s.m4a', status: 'COMPLETED' }).returning();
+    await deps.db.insert(turns).values({ sessionId: s.id, recordingKey: 'turns/t.m4a', audioKey: 'turns/t.mp3', status: 'COMPLETED' });
+    for (const k of ['recordings/s.m4a', 'turns/t.m4a', 'turns/t.mp3']) fakes.r2.set(k, new Uint8Array([1]));
+    const r = await gql(yoga, { query: 'mutation{ deleteAccount }' }, token);
+    expect(r.data.deleteAccount).toBe(true);
+    expect(fakes.r2.size).toBe(0);
+    expect(await deps.db.select().from(turns)).toHaveLength(0);
+  });
   it('removes profile, R2 objects, and rows', async () => {
     const { yoga, apple, deps, fakes } = await makeTestDeps();
     const { token, user } = await signIn(yoga, apple);

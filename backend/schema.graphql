@@ -12,6 +12,7 @@ type Mutation {
   deleteAccount: Boolean!
   enrollVoice(referenceText: String!, sample: File!): User!
   previewVoice: String!
+  sendTurn(recording: File!, sessionId: ID!): Turn!
   signInWithApple(identityToken: String!): AuthPayload!
 }
 
@@ -24,11 +25,13 @@ type Query {
 type Session {
   audioUrl: String
   createdAt: DateTime!
+  crisis: Boolean!
   error: String
   id: ID!
   reframedText: String
   status: SessionStatus!
   transcript: String
+  turns: [Turn!]!
 }
 
 enum SessionStatus {
@@ -44,7 +47,20 @@ type Subscription {
   sessionUpdated(id: ID!): Session!
 }
 
+type Turn {
+  agentText: String
+  audioUrl: String
+  closing: Boolean!
+  createdAt: DateTime!
+  crisis: Boolean!
+  error: String
+  id: ID!
+  status: SessionStatus!
+  userText: String
+}
+
 type User {
   hasVoice: Boolean!
   id: ID!
+  profile: String
 }

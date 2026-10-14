@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { sessions, users } from '../db/schema.js';
+import { sessions, turns, users } from '../db/schema.js';
 import { builder } from './builder.js';
 import { gqlError, requireUser } from './errors.js';
 import { UserType, loadUser } from './user.js';
@@ -47,6 +47,8 @@ builder.mutationField('deleteAccount', (t) => t.boolean({
     // Deterministic key: covers a sample uploaded by an enrollment that failed before the row was updated.
     const keys: (string | null)[] = [`voices/${userId}.m4a`, `voices/${userId}-preview.mp3`];
     for (const s of await db.select().from(sessions).where(eq(sessions.userId, userId))) keys.push(s.recordingKey, s.audioKey);
+    for (const t of await db.select({ recordingKey: turns.recordingKey, audioKey: turns.audioKey }).from(turns)
+      .innerJoin(sessions, eq(turns.sessionId, sessions.id)).where(eq(sessions.userId, userId))) keys.push(t.recordingKey, t.audioKey);
     for (const k of keys) if (k) await r2.delete(k);
     if (user.voiceProfileId) await voice.deleteProfile(user.voiceProfileId);
     await db.delete(users).where(eq(users.id, userId));

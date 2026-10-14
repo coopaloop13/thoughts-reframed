@@ -5,11 +5,12 @@ import { gqlError, requireUser } from './errors.js';
 import { loadUser } from './user.js';
 import { bytesOf } from './voice.js';
 
-const SessionStatusEnum = builder.enumType('SessionStatus', { values: SESSION_STATUSES });
+export const SessionStatusEnum = builder.enumType('SessionStatus', { values: SESSION_STATUSES });
 
 export const SessionType = builder.objectRef<SessionRow>('Session').implement({
   fields: (t) => ({
     id: t.exposeID('id'),
+    crisis: t.exposeBoolean('crisis'),
     status: t.field({ type: SessionStatusEnum, resolve: (s) => s.status }),
     transcript: t.exposeString('transcript', { nullable: true }),
     reframedText: t.exposeString('reframedText', { nullable: true }),

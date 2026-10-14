@@ -6,6 +6,7 @@ import { gqlError, requireUser } from './errors.js';
 export const UserType = builder.objectRef<UserRow>('User').implement({
   fields: (t) => ({
     id: t.exposeID('id'),
+    profile: t.exposeString('profile', { nullable: true }),
     hasVoice: t.boolean({ resolve: (u) => u.voiceProfileId !== null }),
   }),
 });

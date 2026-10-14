@@ -54,7 +54,7 @@ export function depsFromEnv() {
     appleJwks: appleJwks(),
     appleAudience: env.APPLE_BUNDLE_ID,
   };
-  const deps = { ...base, startPipeline: () => {} } as Deps;
+  const deps = { ...base, startPipeline: () => {}, startTurn: () => {} } as Deps; // startTurn wired in the turn-pipeline task
   deps.startPipeline = createPipelineStarter(deps);
   return { deps, env };
 }
