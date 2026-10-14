@@ -77,10 +77,17 @@ try {
   });
   if (turn.status !== 'COMPLETED' || !turn.audioUrl) { console.error('smoke FAILED, turn:', turn); throw new Error('turn did not complete'); }
 
-  const meRes = await fetch(`${url}/graphql`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ query: '{ me { profile } }' }) });
-  const me = (await meRes.json() as any).data?.me;
-  console.log('profile:', me?.profile);
-  if (!me?.profile) throw new Error('profile was not written');
+  // The pipeline publishes COMPLETED before the profile refresh (an LLM call) finishes, so poll instead of reading once.
+  const PROFILE_WAIT_MS = 60_000;
+  const deadline = Date.now() + PROFILE_WAIT_MS;
+  let profile: string | null = null;
+  while (!profile && Date.now() < deadline) {
+    const meRes = await fetch(`${url}/graphql`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ query: '{ me { profile } }' }) });
+    profile = ((await meRes.json() as any).data?.me?.profile as string | null) ?? null;
+    if (!profile) await new Promise((r) => setTimeout(r, 2_000));
+  }
+  console.log('profile:', profile);
+  if (!profile) throw new Error(`profile was not written within ${PROFILE_WAIT_MS / 1000}s`);
   code = 0;
 
   const res = await fetch(`${url}/graphql`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ query: 'mutation{ deleteAccount }' }) });
