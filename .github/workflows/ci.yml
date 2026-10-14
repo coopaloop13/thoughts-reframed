@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, staging, main]
+  push:
+    branches: [dev, staging, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run typecheck:worker
+      - run: npm test
+
+  # ponytail: slowest job; cache SPM checkouts (-clonedSourcePackagesDirPath) if it starts to hurt.
+  ios:
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      # Local.xcconfig is gitignored; xcodebuild needs the referenced file to exist, empty is fine.
+      - run: touch Local.xcconfig
+      - run: xcodegen generate
+      - run: >
+          xcodebuild test -project ReframedThoughts.xcodeproj -scheme ReframedThoughts
+          -destination 'platform=iOS Simulator,name=iPhone 17' -quiet
+          CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-
+
+  promotion-guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce feature -> dev -> staging -> main (hotfix/* may target staging or main)
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          case "$BASE" in
+            main)    [[ "$HEAD" == staging || "$HEAD" == hotfix/* ]] || { echo "::error::PRs into main must come from staging or hotfix/* (got $HEAD)"; exit 1; } ;;
+            staging) [[ "$HEAD" == dev     || "$HEAD" == hotfix/* ]] || { echo "::error::PRs into staging must come from dev or hotfix/* (got $HEAD)"; exit 1; } ;;
+          esac
+          echo "ok: $HEAD -> $BASE"
