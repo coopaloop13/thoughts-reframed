@@ -8,7 +8,7 @@ struct CrisisCard: View {
             Text("If you're thinking about harming yourself, please reach out to someone who can help. You don't have to carry this alone.")
                 .foregroundStyle(Color.muted)
             Link(destination: URL(string: "tel:988")!) {
-                Label("Call or text 988", systemImage: "phone.fill").frame(maxWidth: .infinity)
+                Label("Call 988", systemImage: "phone.fill").frame(maxWidth: .infinity)
             }.buttonStyle(PrimaryButtonStyle())
             Text("Or text HOME to 741741 to reach the Crisis Text Line.").font(.footnote).foregroundStyle(Color.muted)
         }

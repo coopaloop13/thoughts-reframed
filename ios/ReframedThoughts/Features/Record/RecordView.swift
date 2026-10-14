@@ -41,8 +41,9 @@ struct RecordView: View {
         case .uploading: ProcessingView(label: SessionStatus.uploaded.progressLabel)
         case .processing(let status): ProcessingView(label: status.progressLabel)
         case .done(let session): PlaybackView(session: session, onDone: { vm.reset() })
-        case .failed(let msg):
+        case .failed(let msg, let crisis):
             VStack(spacing: Theme.spacing) {
+                if crisis { CrisisCard() }
                 Text(msg).multilineTextAlignment(.center)
                 Button("Try again") { vm.reset() }.buttonStyle(PrimaryButtonStyle())
             }.padding(Theme.spacing)

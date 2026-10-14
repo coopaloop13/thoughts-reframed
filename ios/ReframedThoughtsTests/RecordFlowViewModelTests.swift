@@ -20,16 +20,22 @@ struct RecordFlowViewModelTests {
         await vm.record(); await vm.stopAndSubmit()
         #expect(vm.phase == .done(done))
     }
+    @Test func failedCrisisSessionKeepsCrisisFlag() async {
+        let api = API.stub(createSession: { _ in .fixture() }, watchSession: { _ in Self.stream([.fixture(status: .failed, error: "voicestudio 500", crisis: true)]) })
+        let vm = RecordFlowViewModel(api: api, recorder: recording(), onUnauthenticated: {})
+        await vm.record(); await vm.stopAndSubmit()
+        #expect(vm.phase == .failed("Something went wrong while reframing. Please try again.", crisis: true))
+    }
     @Test func failedStatusShowsError() async {
         let api = API.stub(createSession: { _ in .fixture() }, watchSession: { _ in Self.stream([.fixture(status: .failed, error: "OpenAI: 500")]) })
         let vm = RecordFlowViewModel(api: api, recorder: recording(), onUnauthenticated: {})
         await vm.record(); await vm.stopAndSubmit()
-        #expect(vm.phase == .failed("Something went wrong while reframing. Please try again."))
+        #expect(vm.phase == .failed("Something went wrong while reframing. Please try again.", crisis: false))
     }
     @Test func voiceNotEnrolledSurfacesMessage() async {
         let vm = RecordFlowViewModel(api: .stub(createSession: { _ in throw APIError.voiceNotEnrolled }), recorder: recording(), onUnauthenticated: {})
         await vm.record(); await vm.stopAndSubmit()
-        #expect(vm.phase == .failed("Set up your voice first."))
+        #expect(vm.phase == .failed("Set up your voice first.", crisis: false))
     }
     @Test func unauthenticatedCallsBack() async {
         let called = Captured(false)
@@ -41,7 +47,7 @@ struct RecordFlowViewModelTests {
         let api = API.stub(createSession: { _ in .fixture() }, watchSession: { _ in Self.stream([], thenThrow: APIError.transport("socket closed")) })
         let vm = RecordFlowViewModel(api: api, recorder: recording(), onUnauthenticated: {})
         await vm.record(); await vm.stopAndSubmit()
-        #expect(vm.phase == .failed("socket closed"))
+        #expect(vm.phase == .failed("socket closed", crisis: false))
     }
     @Test func resumeNonTerminalSessionSubscribes() async {
         let done = Session.fixture(id: "old", status: .completed, reframedText: "ok", audioUrl: URL(string: "https://r2/b.mp3"))
@@ -69,7 +75,7 @@ struct RecordFlowViewModelTests {
         let api = API.stub(createSession: { _ in .fixture() }, watchSession: { _ in Self.stream([]) })
         let vm = RecordFlowViewModel(api: api, recorder: recording(), onUnauthenticated: {})
         await vm.record(); await vm.stopAndSubmit()
-        #expect(vm.phase == .failed("Lost connection before the affirmation was ready. Check History."))
+        #expect(vm.phase == .failed("Lost connection before the affirmation was ready. Check History.", crisis: false))
     }
     @Test func resetCancelsRunningFollow() async {
         let cont = Captured<AsyncThrowingStream<Session, Error>.Continuation?>(nil)

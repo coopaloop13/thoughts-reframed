@@ -16,7 +16,7 @@ struct PlaybackView: View {
                     Text(session.reframedText ?? "").font(.display(26, weight: .medium)).lineSpacing(6)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading).card()
-                if session.crisis { CrisisCard() }
+                if session.crisis || turns.contains(where: \.crisis) { CrisisCard() }
                 if let url = session.audioUrl {
                     Button { player.isPlaying ? player.stop() : player.play(url) } label: {
                         Image(systemName: player.isPlaying ? "stop.fill" : "play.fill")
@@ -38,7 +38,9 @@ struct PlaybackView: View {
                         }
                     }.frame(maxWidth: .infinity, alignment: .leading).card()
                 }
-                Button(turns.isEmpty ? "Work through this" : "Continue") { showChat = true }.buttonStyle(SecondaryButtonStyle())
+                if turns.last?.closing != true {
+                    Button(turns.isEmpty ? "Work through this" : "Continue") { showChat = true }.buttonStyle(SecondaryButtonStyle())
+                }
                 if let onDone { Button("New thought", action: onDone).buttonStyle(PrimaryButtonStyle()) }
             }
             .padding(Theme.spacing)

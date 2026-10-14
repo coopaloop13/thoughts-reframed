@@ -11,8 +11,8 @@ struct SessionDetailView: View {
             case .none, .idle: ProgressView().tint(.forest)
             case .done(let s): PlaybackView(session: s)
             case .processing(let status): ProcessingView(label: status.progressLabel)
-            case .failed(let msg):
-                VStack(spacing: 12) { Text(msg).multilineTextAlignment(.center); if let raw = session.error { Text(raw).font(.caption2).foregroundStyle(Color.muted) } }.padding(Theme.spacing)
+            case .failed(let msg, let crisis):
+                VStack(spacing: 12) { if crisis { CrisisCard() }; Text(msg).multilineTextAlignment(.center); if let raw = session.error { Text(raw).font(.caption2).foregroundStyle(Color.muted) } }.padding(Theme.spacing)
             default: ProgressView().tint(.forest)
             }
         }

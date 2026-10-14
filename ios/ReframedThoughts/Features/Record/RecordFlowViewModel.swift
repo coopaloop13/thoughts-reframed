@@ -16,7 +16,7 @@ extension SessionStatus {
 
 @MainActor @Observable
 final class RecordFlowViewModel {
-    enum Phase: Equatable { case idle, recording, uploading, processing(SessionStatus), done(Session), failed(String), permissionDenied }
+    enum Phase: Equatable { case idle, recording, uploading, processing(SessionStatus), done(Session), failed(String, crisis: Bool), permissionDenied }
     private(set) var phase: Phase = .idle
     private let api: API
     private let recorder: Recording
@@ -30,12 +30,12 @@ final class RecordFlowViewModel {
     func record() async {
         guard phase == .idle else { return }
         guard await recorder.requestPermission() == .granted else { phase = .permissionDenied; return }
-        do { try recorder.start(); phase = .recording } catch { phase = .failed(error.localizedDescription) }
+        do { try recorder.start(); phase = .recording } catch { phase = .failed(error.localizedDescription, crisis: false) }
     }
 
     func stopAndSubmit() async {
         guard phase == .recording else { return }
-        guard let url = recorder.stop() else { phase = .failed("Recording failed."); return }
+        guard let url = recorder.stop() else { phase = .failed("Recording failed.", crisis: false); return }
         phase = .uploading
         defer { try? FileManager.default.removeItem(at: url) }
         do {
@@ -45,7 +45,7 @@ final class RecordFlowViewModel {
     }
 
     func resume(session: Session) async {
-        if session.status.isTerminal { phase = session.status == .completed ? .done(session) : .failed(Self.failureMessage(session.error)); return }
+        if session.status.isTerminal { phase = session.status == .completed ? .done(session) : .failed(Self.failureMessage(session.error), crisis: session.crisis); return }
         phase = .processing(session.status)
         await startFollowing(session.id)
     }
@@ -65,12 +65,12 @@ final class RecordFlowViewModel {
                 guard !Task.isCancelled else { return }
                 switch s.status {
                 case .completed: phase = .done(s); return
-                case .failed: phase = .failed(Self.failureMessage(s.error)); return
+                case .failed: phase = .failed(Self.failureMessage(s.error), crisis: s.crisis); return
                 default: phase = .processing(s.status)
                 }
             }
             guard !Task.isCancelled else { return }
-            phase = .failed(APIError.lostConnection)
+            phase = .failed(APIError.lostConnection, crisis: false)
         } catch {
             guard !Task.isCancelled else { return }
             fail(error)
@@ -79,7 +79,7 @@ final class RecordFlowViewModel {
 
     private func fail(_ error: Error) {
         if case APIError.unauthenticated = error { onUnauthenticated(); return }
-        phase = .failed((error as? APIError)?.userMessage ?? error.localizedDescription)
+        phase = .failed((error as? APIError)?.userMessage ?? error.localizedDescription, crisis: false)
     }
 
     static func failureMessage(_ raw: String?) -> String { "Something went wrong while reframing. Please try again." }

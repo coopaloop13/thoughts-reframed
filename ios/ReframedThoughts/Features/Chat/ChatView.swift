@@ -22,7 +22,11 @@ struct ChatView: View {
                     vm = m
                 }
             }
-            .onDisappear { player.stop() }
+            .onDisappear {
+                vm?.onReplyReady = nil
+                if vm?.phase == .recording { _ = recorder.stop() }
+                player.stop()
+            }
     }
 
     @ViewBuilder private func content(_ vm: ChatViewModel) -> some View {
