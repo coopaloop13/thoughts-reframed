@@ -5,6 +5,7 @@ struct RecordView: View {
     @Environment(AppState.self) private var app
     @State private var recorder = AudioRecorder()
     @State private var vm: RecordFlowViewModel?
+    @ScaledMetric(relativeTo: .largeTitle) private var countdownSize: CGFloat = 48
 
     var body: some View {
         NavigationStack {
@@ -21,20 +22,20 @@ struct RecordView: View {
         case .idle:
             VStack(spacing: Theme.spacing) {
                 Spacer()
-                Text("What's the thought?").font(.display(32))
+                Text("What's the thought?").font(.display(.title))
                 Text("Say it out loud. You'll hear it back, reframed.").foregroundStyle(Color.muted).multilineTextAlignment(.center)
                 Spacer()
-                Button { Task { await vm.record() } } label: { Image(systemName: "mic.fill") }.buttonStyle(RecordButtonStyle())
+                Button("Start recording", systemImage: "mic.fill") { Task { await vm.record() } }.buttonStyle(RecordButtonStyle())
                 Text("Tap to start").font(.footnote).foregroundStyle(Color.muted)
                 Spacer()
             }.padding(Theme.spacing)
         case .recording:
             VStack(spacing: Theme.spacing) {
                 Spacer()
-                Text("Listening").font(.display(32))
-                Text(String(format: "%.0f s", recorder.duration)).font(.display(48)).monospacedDigit().foregroundStyle(Color.forest)
+                Text("Listening").font(.display(.title))
+                Text(String(format: "%.0f s", recorder.duration)).font(.display(countdownSize)).monospacedDigit().foregroundStyle(Color.forest)
                 Spacer()
-                Button { Task { await vm.stopAndSubmit() } } label: { Image(systemName: "stop.fill") }.buttonStyle(RecordButtonStyle(active: true))
+                Button("Stop recording", systemImage: "stop.fill") { Task { await vm.stopAndSubmit() } }.buttonStyle(RecordButtonStyle(active: true))
                 Text("Tap when you're done").font(.footnote).foregroundStyle(Color.muted)
                 Spacer()
             }.padding(Theme.spacing)

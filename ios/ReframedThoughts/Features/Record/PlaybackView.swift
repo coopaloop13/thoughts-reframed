@@ -13,13 +13,13 @@ struct PlaybackView: View {
             VStack(spacing: Theme.spacing) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(session.crisis ? "A note for you" : "Reframed").font(.caption.weight(.semibold)).foregroundStyle(Color.forest).textCase(.uppercase)
-                    Text(session.reframedText ?? "").font(.display(26, weight: .medium)).lineSpacing(6)
+                    Text(session.reframedText ?? "").font(.display(.title2, weight: .medium)).lineSpacing(6)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading).card()
                 if session.crisis || turns.contains(where: \.crisis) { CrisisCard() }
                 if let url = session.audioUrl {
-                    Button { player.isPlaying ? player.stop() : player.play(url) } label: {
-                        Image(systemName: player.isPlaying ? "stop.fill" : "play.fill")
+                    Button(player.isPlaying ? "Stop" : "Play reframe", systemImage: player.isPlaying ? "stop.fill" : "play.fill") {
+                        player.isPlaying ? player.stop() : player.play(url)
                     }.buttonStyle(RecordButtonStyle(active: true))
                     Text(player.isPlaying ? "Playing in your voice" : "Play again").font(.footnote).foregroundStyle(Color.muted)
                 }

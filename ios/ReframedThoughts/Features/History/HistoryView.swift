@@ -17,7 +17,7 @@ struct HistoryView: View {
                         List(sessions) { s in
                             NavigationLink(value: s) {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text(s.reframedText ?? s.transcript ?? "…").font(.display(17, weight: .regular)).lineLimit(2)
+                                    Text(s.reframedText ?? s.transcript ?? "…").font(.display(.body, weight: .regular)).lineLimit(2)
                                     Text("\(s.createdAt, style: .date) · \(s.status.progressLabel)").font(.caption).foregroundStyle(Color.muted)
                                 }.padding(.vertical, 4)
                             }

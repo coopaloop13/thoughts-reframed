@@ -21,7 +21,9 @@ extension Color {
 }
 
 extension Font {
-    /// Serif display for the words that matter (affirmations, titles); system sans for everything else.
+    /// Serif display for the words that matter (affirmations, titles); system sans for everything else. Scales with Dynamic Type.
+    static func display(_ style: Font.TextStyle, weight: Font.Weight = .semibold) -> Font { .system(style, design: .serif, weight: weight) }
+    /// Fixed-size serif; only for a number driven by `@ScaledMetric` (countdowns).
     static func display(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font { .system(size: size, weight: weight, design: .serif) }
 }
 
@@ -56,7 +58,7 @@ struct SecondaryButtonStyle: ButtonStyle {
 struct RecordButtonStyle: ButtonStyle {
     var active = false
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label.font(.system(size: 36, weight: .semibold)).foregroundStyle(Color.onClay)
+        configuration.label.labelStyle(.iconOnly).font(.system(size: 36, weight: .semibold)).foregroundStyle(Color.onClay)
             .frame(width: 104, height: 104)
             .background(Circle().fill(active ? Color.forest : Color.clay))
             .shadow(color: (active ? Color.forest : Color.clay).opacity(0.35), radius: 16, y: 8)
