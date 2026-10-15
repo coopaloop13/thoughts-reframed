@@ -24,6 +24,7 @@ GraphQL API for Reframed Thoughts. Node 22, ESM, TypeScript.
 
 ## Conventions
 - Stack: graphql-yoga 5, @pothos/core 4, graphql-ws 6 (`import ... from 'graphql-ws/use/ws'`), drizzle-orm, jose, aws4fetch.
+- Transactions: wrap multi-row or read-then-write sequences in `db.transaction(async (tx) => …)`; publish on pubsub and call external services only after it commits. Uniqueness and ownership are enforced by constraints in `src/db/schema.ts`, not by application checks.
 - Session status order: UPLOADED → TRANSCRIBING → REFRAMING → SYNTHESIZING → COMPLETED | FAILED. Every transition writes the row then publishes `session` on pubsub.
 - Failure logging: pipelines log `session failed <id> <stage> <err>` / `turn failed …` to stderr before marking FAILED (the DB `error` column keeps only the message); VoiceStudio client errors carry the response body or the network cause (`VoiceStudio POST /v1/audio/speech: 500 <body>`). `docker compose logs backend` is the first stop for a failed session.
 - Product decision (2026-10-14): the reframe is an affirmation plus one concrete same-day action in the last sentence (`REFRAME_INSTRUCTIONS`, under 60 words, spoken as one text). The action points at positive evidence (list five things going well, one thing handled well, one question that checks the thought); contact with the person the thought is about is allowed when it tests the belief, but never sending the user to a third party to listen or vent (that turns into complaining, not reframing). No separate action field yet; add one when follow-up tracking is wanted.
