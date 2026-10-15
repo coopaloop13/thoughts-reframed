@@ -4,7 +4,7 @@ import SwiftUI
 struct CrisisCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("You deserve support right now").font(.display(20, weight: .medium))
+            Text("You deserve support right now").font(.display(.title3, weight: .medium))
             Text("If you're thinking about harming yourself, please reach out to someone who can help. You don't have to carry this alone.")
                 .foregroundStyle(Color.muted)
             Link(destination: URL(string: "tel:988")!) {

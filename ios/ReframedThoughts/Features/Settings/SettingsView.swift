@@ -16,7 +16,7 @@ struct SettingsView: View {
                 Section {
                     Button("Delete account", role: .destructive) { confirmDelete = true }
                 } footer: { Text("Deletes your voice clone, recordings and affirmations. This cannot be undone.") }
-                if let error { Section { Text(error).foregroundStyle(.red) } }
+                if let error { Section { Text(error) } }
             }
             .listRowBackground(Color.surface)
             .scrollContentBackground(.hidden)

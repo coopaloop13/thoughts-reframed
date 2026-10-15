@@ -10,7 +10,7 @@ struct SignInView: View {
         VStack(spacing: Theme.spacing) {
             Spacer()
             Image(systemName: "leaf.fill").font(.system(size: 44)).foregroundStyle(Color.forest)
-            Text("Reframed").font(.display(44))
+            Text("Reframed").font(.display(.largeTitle))
             Text("Say the thought out loud.\nHear it back, kinder, in your own voice.")
                 .multilineTextAlignment(.center).foregroundStyle(Color.muted)
             Spacer()
@@ -21,7 +21,7 @@ struct SignInView: View {
             }
             .signInWithAppleButtonStyle(scheme == .dark ? .white : .black)
             .frame(height: 52).clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-            if let error { Text(error).foregroundStyle(.red).font(.footnote).multilineTextAlignment(.center) }
+            if let error { Text(error).font(.footnote).multilineTextAlignment(.center) }
         }
         .padding(Theme.spacing)
         .background(Color.sand.ignoresSafeArea())

@@ -10,15 +10,16 @@ struct EnrollVoiceView: View {
     @State private var recorder = AudioRecorder()
     @State private var player = AudioPlayer()
     @State private var vm: EnrollVoiceViewModel?
+    @ScaledMetric(relativeTo: .largeTitle) private var countdownSize: CGFloat = 40
 
     var body: some View {
         ScrollView {
             VStack(spacing: Theme.spacing) {
-                Text(isRerecord ? "Re-record your voice" : "Set up your voice").font(.display(30))
+                Text(isRerecord ? "Re-record your voice" : "Set up your voice").font(.display(.title))
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Text("Read this aloud, naturally, like you're talking to a friend.").foregroundStyle(Color.muted)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text(EnrollVoiceViewModel.referenceText).font(.display(20, weight: .regular)).lineSpacing(6).card()
+                Text(EnrollVoiceViewModel.referenceText).font(.display(.title3, weight: .regular)).lineSpacing(6).card()
                 if let vm { content(vm) }
             }
             .padding(Theme.spacing)
@@ -39,8 +40,8 @@ struct EnrollVoiceView: View {
         switch vm.phase {
         case .idle: Button("Start recording") { Task { await vm.record() } }.buttonStyle(PrimaryButtonStyle())
         case .recording:
-            Text("\(Int(max(0, EnrollVoiceViewModel.maximumSeconds - recorder.duration).rounded(.up))) s").font(.display(40)).monospacedDigit()
-            Button { vm.stop() } label: { Image(systemName: "stop.fill") }.buttonStyle(RecordButtonStyle(active: true))
+            Text("\(Int(max(0, EnrollVoiceViewModel.maximumSeconds - recorder.duration).rounded(.up))) s").font(.display(countdownSize)).monospacedDigit()
+            Button("Stop recording", systemImage: "stop.fill", action: vm.stop).buttonStyle(RecordButtonStyle(active: true))
             Text("Tap to stop when you've finished the paragraph. Recording stops by itself at zero.").font(.footnote).foregroundStyle(Color.muted)
                 .multilineTextAlignment(.center)
         case .review:
@@ -48,15 +49,15 @@ struct EnrollVoiceView: View {
             Button("Record again") { vm.retake() }.buttonStyle(SecondaryButtonStyle())
         case .uploading: ProcessingView(label: "Cloning your voice…")
         case .preview(let url, _):
-            Text("Does this sound like you?").font(.display(22))
-            Button { player.isPlaying ? player.stop() : player.play(url) } label: {
-                Image(systemName: player.isPlaying ? "stop.fill" : "play.fill")
+            Text("Does this sound like you?").font(.display(.title2))
+            Button(player.isPlaying ? "Stop preview" : "Play preview", systemImage: player.isPlaying ? "stop.fill" : "play.fill") {
+                player.isPlaying ? player.stop() : player.play(url)
             }.buttonStyle(RecordButtonStyle(active: true))
             Button("Keep this voice") { player.stop(); vm.keep() }.buttonStyle(PrimaryButtonStyle())
             Button("Record again") { player.stop(); vm.retake() }.buttonStyle(SecondaryButtonStyle())
         case .done: ProgressView()
         case .failed(let msg):
-            Text(msg).foregroundStyle(Color.clay).multilineTextAlignment(.center)
+            Text(msg).multilineTextAlignment(.center)
             Button("Try again") { vm.retake() }.buttonStyle(PrimaryButtonStyle())
         case .permissionDenied:
             Text("Microphone access is off. Enable it in Settings to continue.").multilineTextAlignment(.center)

@@ -3,7 +3,7 @@ import Observation
 
 @MainActor @Observable
 final class AppState {
-    enum Route: Equatable { case loading, signedOut, enroll, main, failed(String) }
+    enum Route: Equatable { case loading, signedOut, intro, enroll, main, failed(String) }
     private(set) var route: Route = .loading
     private(set) var user: User?
     private(set) var api: API
@@ -20,7 +20,7 @@ final class AppState {
     func start() async {
         guard let token = tokenStore.read() ?? devJWT else { route = .signedOut; return }
         api = makeAPI(token)
-        do { routeFor(try await api.me()) } catch {
+        do { user = try await api.me(); route = .intro } catch {
             if error is CancellationError { return }
             if case APIError.unauthenticated = error { signOut(); return }
             route = .failed((error as? APIError)?.userMessage ?? error.localizedDescription)
@@ -31,10 +31,13 @@ final class AppState {
         let (token, user) = try await api.signIn(identityToken)
         try tokenStore.write(token)
         api = makeAPI(token)
-        routeFor(user)
+        self.user = user; route = .intro
     }
 
-    func didEnroll(_ user: User) { routeFor(user) }
+    /// "Next" on the intro screen: enroll a voice first, or go straight to recording.
+    func continueFromIntro() { route = user?.hasVoice == true ? .main : .enroll }
+
+    func didEnroll(_ user: User) { self.user = user; route = .main }
 
     func signOut() { tokenStore.clear(); user = nil; api = makeAPI(nil); route = .signedOut }
 
@@ -42,6 +45,4 @@ final class AppState {
     func handle(_ error: Error) {
         if case APIError.unauthenticated = error { signOut() }
     }
-
-    private func routeFor(_ user: User) { self.user = user; route = user.hasVoice ? .main : .enroll }
 }

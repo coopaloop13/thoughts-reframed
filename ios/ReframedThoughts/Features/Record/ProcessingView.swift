@@ -5,7 +5,7 @@ struct ProcessingView: View {
     var body: some View {
         VStack(spacing: Theme.spacing) {
             ProgressView().controlSize(.large).tint(.forest)
-            Text(label).font(.display(22, weight: .regular)).foregroundStyle(Color.muted)
+            Text(label).font(.display(.title2, weight: .regular)).foregroundStyle(Color.muted)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.sand.ignoresSafeArea())

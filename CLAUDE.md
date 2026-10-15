@@ -9,7 +9,10 @@ Speak a negative thought; get it back as an affirmation in a clone of your own v
 ## Rules
 - Every change is TDD via the superpowers:test-driven-development skill: failing test first.
 - Ponytail mode is on: smallest working change, reuse before writing, stdlib before deps.
+- SOLID: one reason to change per module; extend via the existing seams (`Deps` in backend, `API` in iOS) rather than editing them; depend on those seams, not on concrete clients. No speculative interfaces (ponytail still wins).
+- ACID: every multi-row or read-then-write database change runs in one transaction (`db.transaction`), invariants live in schema constraints, and a failed step leaves no partial rows. Side effects (R2, VoiceStudio, pubsub) happen only after the transaction commits.
 - Keep this file, `backend/CLAUDE.md` and `ios/CLAUDE.md` current: any task that adds a module, convention, error code, env var, or product decision updates the relevant CLAUDE.md in the same commit.
+- iOS UI follows the standards in `ios/CLAUDE.md` › UI standards (Dynamic Type, labelled buttons, token colours, disclosure copy). Run `/apple-design audit` and `/swiftui-pro audit` on any PR that touches a View.
 - Secrets never go in the repo. Backend reads env vars (`backend/.env.example`); production uses `wrangler secret put`.
 
 ## Run locally

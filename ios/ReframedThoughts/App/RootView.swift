@@ -7,6 +7,7 @@ struct RootView: View {
             switch app.route {
             case .loading: ProgressView()
             case .signedOut: SignInView()
+            case .intro: IntroView()
             case .enroll: EnrollVoiceView()
             case .main: MainTabView()
             case .failed(let msg):
