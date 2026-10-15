@@ -62,7 +62,12 @@ struct ChatView: View {
     private func agentBubble(_ text: String, audio: URL?) -> some View {
         HStack(alignment: .top, spacing: 8) {
             bubble(text, mine: false)
-            if let audio { Button(player.isPlaying ? "Stop reply" : "Play reply", systemImage: player.isPlaying ? "stop.circle" : "play.circle") { player.isPlaying ? player.stop() : player.play(audio) }.labelStyle(.iconOnly).font(.title2).frame(minWidth: 44, minHeight: 44).tint(.forest) }
+            if let audio {
+                Button { player.isPlaying ? player.stop() : player.play(audio) } label: {
+                    Label(player.isPlaying ? "Stop reply" : "Play reply", systemImage: player.isPlaying ? "stop.circle" : "play.circle")
+                        .labelStyle(.iconOnly).font(.title2).frame(minWidth: 44, minHeight: 44).contentShape(.rect)
+                }.tint(.forest)
+            }
         }
     }
 
