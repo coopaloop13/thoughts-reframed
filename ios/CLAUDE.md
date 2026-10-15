@@ -12,7 +12,8 @@ SwiftUI iPhone app for Reframed Thoughts. Swift 6, iOS 17+, Apollo iOS 2.x.
 ## Layout
 - `ReframedThoughts/App/` — `ReframedThoughtsApp`, `RootView` (routing), `AppState` (token + user), `AppConfig` (base URL).
 - `ReframedThoughts/Network/` — `API` (struct of async closures; the only seam), `API+Live` (Apollo implementation), `ApolloClientFactory`, `TokenStore` (Keychain).
-- `ReframedThoughts/Features/{Auth,Enroll,Record,Chat,History,Settings}/` — a View (and a ViewModel where there is logic) per feature.
+- `ReframedThoughts/Features/{Auth,Intro,Enroll,Record,Chat,History,Settings}/` — a View (and a ViewModel where there is logic) per feature.
+- `Intro/` — `IntroView`, shown on every app start and sign-in (`Route.intro`); "Next" calls `AppState.continueFromIntro()`, which goes to `.enroll` without a voice or `.main` with one. Finishing enrollment skips the intro.
 - `Chat/` — `ChatView` + `ChatViewModel` (spoken follow-up turns via `sendTurn` / `watchTurn`), `CrisisCard` (988 / 741741, shown whenever `session.crisis` or any `turn.crisis`).
 - `ReframedThoughts/Services/` — `AudioRecorder`, `AudioPlayer`.
 - `ReframedThoughts/GraphQL/*.graphql` — operations. `ReframedThoughts/Generated/` — codegen output (never edit).
